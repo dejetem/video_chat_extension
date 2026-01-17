@@ -1,0 +1,35 @@
+#!/bin/bash
+
+# Pre-commit hook for Rust project
+# This hook runs formatting, linting, and tests before allowing a commit
+
+set -e
+
+echo "Running pre-commit checks..."
+
+# Check formatting
+echo "Checking code formatting..."
+cargo fmt --all -- --check
+if [ $? -ne 0 ]; then
+    echo "Code formatting check failed. Run 'cargo fmt' to fix."
+    exit 1
+fi
+
+# Run clippy
+echo "Running clippy..."
+cargo clippy --all-targets --all-features --workspace -- -D warnings
+if [ $? -ne 0 ]; then
+    echo "Clippy found issues. Please fix them before committing."
+    exit 1
+fi
+
+# Run tests
+echo "Running tests..."
+cargo test --workspace
+if [ $? -ne 0 ]; then
+    echo "Tests failed. Please fix them before committing."
+    exit 1
+fi
+
+echo "All pre-commit checks passed!"
+exit 0
