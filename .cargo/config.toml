@@ -1,0 +1,13 @@
+[build]
+target = "wasm32-unknown-unknown"
+
+[target.wasm32-unknown-unknown]
+rustflags = [
+    "-C", "link-arg=-s",           # Strip symbols
+    "-C", "opt-level=z",            # Optimize for size
+]
+
+[profile.release]
+opt-level = "z"
+lto = true
+codegen-units = 1

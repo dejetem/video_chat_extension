@@ -1,0 +1,22 @@
+# Deny all warnings in CI
+warn-lints-table = { level = "deny" }
+
+# Enable pedantic lints
+pedantic = { level = "warn", priority = -1 }
+
+# Specific lints to deny
+[lints.rust]
+unsafe_code = "deny"
+missing_docs = "warn"
+
+[lints.clippy]
+all = "deny"
+pedantic = "warn"
+nursery = "warn"
+cargo = "warn"
+
+# Allow some pedantic lints that are too strict
+module_name_repetitions = "allow"
+must_use_candidate = "allow"
+missing_errors_doc = "allow"
+missing_panics_doc = "allow"

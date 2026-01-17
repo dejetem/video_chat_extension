@@ -1,0 +1,45 @@
+# Rust
+/target/
+**/*.rs.bk
+*.pdb
+Cargo.lock  # For libraries, commit for binaries
+
+# WASM
+/pkg/
+wasm-pack.log
+*.wasm
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Testing
+/coverage/
+tarpaulin-report.html
+*.profraw
+
+# Build artifacts
+*.o
+*.so
+*.dylib
+*.dll
+
+# Documentation
+/target/doc/
+
+# Environment
+.env
+.env.local
+
+# Logs
+*.log
+
+# pdf
+*.pdf
+
+# OS
+Thumbs.db
