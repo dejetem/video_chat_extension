@@ -4,7 +4,8 @@ members = [
     "crates/signaling",
     "crates/wasm",
     "crates/media",
-    "crates/server",
+    "crates/sfu-client",
+    "crates/sfu-server",
 ]
 resolver = "2"
 

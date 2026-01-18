@@ -4,7 +4,7 @@ A production-ready Chrome extension for group video calls built with Rust, WebAs
 
 ## Features
 
-- **P2P Mesh Architecture**: Direct peer-to-peer connections for up to ~10 participants
+- **SFU Architecture**: Scalable Selective Forwarding Unit supporting 100+ participants
 - **WebRTC DataChannels**: Low-latency chat messaging without central relay
 - **SQLite-WASM**: Local persistent storage using Origin Private File System (OPFS)
 - **Cloudflare Tunnel**: Secure external access via `cloudflared`
@@ -12,6 +12,7 @@ A production-ready Chrome extension for group video calls built with Rust, WebAs
 - **Admin Interface**: Separate web-based UI with persistent logs
 - **Dark Mode UI**: High-contrast off-white on black theme
 - **Manifest V3**: Modern Chrome extension architecture with service workers
+- **Simulcast Support**: Multiple quality layers for adaptive streaming
 
 ## Architecture
 
@@ -24,7 +25,8 @@ video-chat-extension/
 │   ├── signaling/  # WebRTC signaling protocol
 │   ├── media/      # Media stream & DataChannel management
 │   ├── wasm/       # WASM bindings and Chrome API
-│   └── server/     # Local HTTP server for signaling
+│   ├── sfu-client/ # SFU client logic
+│   └── sfu-server/ # SFU server implementation
 ├── extension/      # Chrome extension files (HTML/CSS/JS)
 ├── admin/          # Web-based admin interface
 └── tests/          # Integration tests
@@ -33,10 +35,11 @@ video-chat-extension/
 ### Key Technologies
 
 - **Rust** Compiled to WASM for browser execution
-- **WebRTC** P2P video/audio + DataChannels for chat
+- **WebRTC** SFU-based video/audio + DataChannels for chat
 - **SQLite-WASM** Local database with OPFS
-- **STUN** NAT traversal (Google's stun.l.google.com:19302)
-- **Cloudflare Tunnel** Expose local signaling server
+- **STUN/TURN** NAT traversal and relay servers
+- **SFU Server** Self-hosted media router for scalable streaming
+- **Cloudflare Tunnel** Expose SFU server and signaling
 
 ## Quick Start
 
@@ -83,13 +86,13 @@ This project is developed in **7 stages**, each with complete tests:
 
 | Stage | Focus | Status |
 |-------|-------|--------|
-| **0** | Project initialization | In Progress |
-| **1** | Core foundation & signaling | Pending |
+| **0** | Project initialization | Complete |
+| **1** | Core foundation & SFU signaling | Pending |
 | **2** | WASM bridge & SQLite | Pending |
-| **3** | Media streams & DataChannels | Pending |
-| **4** | P2P mesh & group calls | Pending |
+| **3** | Media streams & SFU connection | Pending |
+| **4** | SFU client & room management | Pending |
 | **5** | UI & admin interface | Pending |
-| **6** | Cloudflare Tunnel & production | Pending |
+| **6** | SFU server & production | Pending |
 
 See [implementation_plan.md](docs/implementation_plan.md) for detailed stage breakdown.
 
