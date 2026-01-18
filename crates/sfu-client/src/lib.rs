@@ -1,1 +1,1 @@
-fn main() {}
+//! SFU client logic.

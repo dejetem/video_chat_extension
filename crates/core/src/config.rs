@@ -170,11 +170,16 @@ mod tests {
 
     #[test]
     fn test_max_participants_validation() {
-        let mut config = Config::default();
-        config.max_participants = 0;
+        let config = Config {
+            max_participants: 0,
+            ..Config::default()
+        };
         assert!(config.validate().is_err());
 
-        config.max_participants = 1;
+        let config = Config {
+            max_participants: 1,
+            ..Config::default()
+        };
         assert!(config.validate().is_ok());
     }
 }

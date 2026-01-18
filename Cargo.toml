@@ -9,6 +9,14 @@ members = [
 ]
 resolver = "2"
 
+[workspace.lints.rust]
+unsafe_code = "deny"
+# missing_docs = "warn"
+
+[workspace.lints.clippy]
+all = "deny"
+# pedantic = "warn"
+
 [workspace.package]
 version = "0.1.0"
 edition = "2021"

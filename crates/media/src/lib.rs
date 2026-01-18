@@ -1,1 +1,1 @@
-fn main() {}
+//! Media stream management.

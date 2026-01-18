@@ -25,8 +25,23 @@ impl ProtocolVersion {
         Self::new(1, 0)
     }
 
-    /// Parse version from string (e.g., "1.0").
-    pub fn from_str(s: &str) -> Result<Self> {
+    /// Check if this version is compatible with another version.
+    /// Compatible if major versions match and minor version is >= other.
+    pub fn is_compatible_with(&self, other: &Self) -> bool {
+        self.major == other.major && self.minor >= other.minor
+    }
+}
+
+impl std::fmt::Display for ProtocolVersion {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}.{}", self.major, self.minor)
+    }
+}
+
+impl std::str::FromStr for ProtocolVersion {
+    type Err = Error;
+
+    fn from_str(s: &str) -> Result<Self> {
         let parts: Vec<&str> = s.split('.').collect();
         if parts.len() != 2 {
             return Err(Error::unsupported_version(format!(
@@ -43,17 +58,6 @@ impl ProtocolVersion {
             .map_err(|_| Error::unsupported_version(format!("Invalid minor version: {}", s)))?;
 
         Ok(Self::new(major, minor))
-    }
-
-    /// Convert to string representation.
-    pub fn to_string(&self) -> String {
-        format!("{}.{}", self.major, self.minor)
-    }
-
-    /// Check if this version is compatible with another version.
-    /// Compatible if major versions match and minor version is >= other.
-    pub fn is_compatible_with(&self, other: &Self) -> bool {
-        self.major == other.major && self.minor >= other.minor
     }
 }
 
@@ -80,14 +84,13 @@ impl Protocol {
     /// Validate a message against the protocol.
     pub fn validate_message(&self, message: &Message) -> Result<()> {
         // Parse message version
-        let msg_version = ProtocolVersion::from_str(&message.version)?;
+        let msg_version: ProtocolVersion = message.version.parse()?;
 
         // Check compatibility
         if !self.version.is_compatible_with(&msg_version) {
             return Err(Error::unsupported_version(format!(
                 "Message version {} is not compatible with protocol version {}",
-                msg_version.to_string(),
-                self.version.to_string()
+                msg_version, self.version
             )));
         }
 
@@ -129,12 +132,12 @@ mod tests {
 
     #[test]
     fn test_version_from_str() {
-        let v = ProtocolVersion::from_str("1.0").unwrap();
+        let v: ProtocolVersion = "1.0".parse().unwrap();
         assert_eq!(v.major, 1);
         assert_eq!(v.minor, 0);
 
-        assert!(ProtocolVersion::from_str("invalid").is_err());
-        assert!(ProtocolVersion::from_str("1").is_err());
+        assert!("invalid".parse::<ProtocolVersion>().is_err());
+        assert!("1".parse::<ProtocolVersion>().is_err());
     }
 
     #[test]
@@ -151,7 +154,7 @@ mod tests {
     #[test]
     fn test_protocol_validation() {
         let protocol = Protocol::new();
-        
+
         let msg = Message::new(
             "test-1",
             MessageType::Join {
@@ -166,7 +169,7 @@ mod tests {
     #[test]
     fn test_protocol_parse_message() {
         let protocol = Protocol::new();
-        
+
         let msg = Message::new(
             "test-1",
             MessageType::Join {
@@ -177,14 +180,14 @@ mod tests {
 
         let json = msg.to_json().unwrap();
         let parsed = protocol.parse_message(&json).unwrap();
-        
+
         assert_eq!(parsed.id, msg.id);
     }
 
     #[test]
     fn test_incompatible_version() {
         let protocol = Protocol::new();
-        
+
         let mut msg = Message::new(
             "test-1",
             MessageType::Join {

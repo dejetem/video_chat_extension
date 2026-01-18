@@ -88,7 +88,7 @@ mod tests {
     fn test_error_from_serde() {
         let json_err = serde_json::from_str::<serde_json::Value>("invalid json");
         assert!(json_err.is_err());
-        
+
         let err: Error = json_err.unwrap_err().into();
         assert!(matches!(err, Error::Serialization(_)));
     }

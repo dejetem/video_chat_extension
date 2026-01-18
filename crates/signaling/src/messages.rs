@@ -208,7 +208,7 @@ mod tests {
 
         let json = msg.to_json().unwrap();
         let deserialized = Message::from_json(&json).unwrap();
-        
+
         assert_eq!(msg.id, deserialized.id);
         assert_eq!(msg.version, deserialized.version);
     }

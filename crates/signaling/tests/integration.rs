@@ -1,4 +1,4 @@
-use video_chat_signaling::{Message, MessageType, Protocol, SessionDescription, SdpType};
+use video_chat_signaling::{Message, MessageType, Protocol, SdpType, SessionDescription};
 
 #[test]
 fn test_signaling_flow() {
