@@ -87,7 +87,7 @@ This project is developed in **7 stages**, each with complete tests:
 | Stage | Focus | Status |
 |-------|-------|--------|
 | **0** | Project initialization | Complete |
-| **1** | Core foundation & SFU signaling | Pending |
+| **1** | Core foundation & SFU signaling | In Progress |
 | **2** | WASM bridge & SQLite | Pending |
 | **3** | Media streams & SFU connection | Pending |
 | **4** | SFU client & room management | Pending |
