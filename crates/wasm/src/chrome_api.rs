@@ -8,9 +8,7 @@ use wasm_bindgen::prelude::*;
 extern "C" {
     // Top-level chrome object
     pub type Chrome;
-    #[wasm_bindgen(js_name = chrome)]
-    #[allow(deprecated)]
-    #[allow(dead_code)]
+    #[wasm_bindgen(js_name = chrome, thread_local_v2)]
     pub static CHROME: Chrome;
 
     // chrome.runtime

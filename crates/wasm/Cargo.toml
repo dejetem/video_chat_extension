@@ -17,7 +17,7 @@ web-sys = { workspace = true, features = [
     "WorkerGlobalScope",
     "ServiceWorkerGlobalScope",
     "Storage", 
-    "FileSystem" 
+    "Storage"
 ] }
 js-sys = { workspace = true }
 serde = { workspace = true, features = ["derive"] }
