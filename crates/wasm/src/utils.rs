@@ -10,8 +10,8 @@ pub fn set_panic_hook() {
     // but for now we'll just use a simple logger hook or rely on default wasm-bindgen behavior
     // if the crate isn't present.
     // A more robust implementation often uses the `console_error_panic_hook` crate.
-    #[cfg(feature = "console_error_panic_hook")]
-    console_error_panic_hook::set_once();
+    // #[cfg(feature = "console_error_panic_hook")]
+    // console_error_panic_hook::set_once();
 }
 
 pub fn init_logging() {

@@ -1,12 +1,10 @@
-use video_chat_core::error::{Error, Result};
-use wasm_bindgen::prelude::*;
+use video_chat_core::error::Result;
 
 #[allow(dead_code)]
 pub struct Database {
     // conn: Connection, // Removed until correct WASM SQLite crate is identified
 }
 
-#[allow(dead_code)]
 #[allow(dead_code)]
 impl Database {
     pub fn open_in_memory() -> Result<Self> {

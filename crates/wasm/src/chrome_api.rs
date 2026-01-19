@@ -1,3 +1,5 @@
+#![allow(deprecated)]
+#![allow(dead_code)]
 use wasm_bindgen::prelude::*;
 
 #[wasm_bindgen]
