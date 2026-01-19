@@ -6,8 +6,28 @@ authors.workspace = true
 license.workspace = true
 repository.workspace = true
 
+[package.metadata.wasm-pack.profile.release]
+wasm-opt = false
+
 [lib]
 crate-type = ["cdylib", "rlib"]
 
 [dependencies]
 wasm-bindgen = { workspace = true }
+web-sys = { workspace = true, features = [
+    "console",
+    "Window",
+    "WorkerGlobalScope",
+    "ServiceWorkerGlobalScope",
+    "Storage", 
+    "Storage"
+] }
+js-sys = { workspace = true }
+serde = { workspace = true, features = ["derive"] }
+serde-wasm-bindgen = "0.6"
+log = { workspace = true }
+wasm-logger = { workspace = true }
+thiserror = { workspace = true }
+video-chat-core = { path = "../core" }
+[dev-dependencies]
+wasm-bindgen-test = "0.3"
