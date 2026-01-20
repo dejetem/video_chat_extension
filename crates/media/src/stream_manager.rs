@@ -6,6 +6,12 @@ pub struct StreamManager {
     remote_streams: Vec<MediaStream>,
 }
 
+impl Default for StreamManager {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl StreamManager {
     pub fn new() -> Self {
         Self {

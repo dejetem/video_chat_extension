@@ -19,6 +19,12 @@ impl MockSfu {
     }
 }
 
+impl Default for MockSfu {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 #[async_trait]
 impl SfuConnection for MockSfu {
     async fn send_message(&self, msg: &str) -> Result<()> {

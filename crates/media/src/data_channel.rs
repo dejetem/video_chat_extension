@@ -7,6 +7,12 @@ pub struct DataChannelManager {
     data_channel: Option<RtcDataChannel>,
 }
 
+impl Default for DataChannelManager {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl DataChannelManager {
     pub fn new() -> Self {
         Self { data_channel: None }

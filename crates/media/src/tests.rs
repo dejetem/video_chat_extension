@@ -1,8 +1,7 @@
 #[cfg(test)]
-mod tests {
+mod tests_internal {
     use crate::message::DataChannelMessage;
     use crate::transient_storage::TransientStorage;
-    use serde_json;
 
     #[test]
     fn test_message_serialization() {
