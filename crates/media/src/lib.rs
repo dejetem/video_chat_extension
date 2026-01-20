@@ -14,6 +14,7 @@ mod tests;
 pub use data_channel::DataChannelManager;
 pub use ice_handler::IceCandidateHandler;
 pub use message::DataChannelMessage;
+pub use mocks::{MockSfu, SfuConnection};
 pub use peer_connection::PeerConnectionManager;
 pub use stream_manager::StreamManager;
 

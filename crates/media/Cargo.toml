@@ -12,6 +12,8 @@ serde_json = { workspace = true }
 thiserror = { workspace = true }
 anyhow = { workspace = true }
 log = { workspace = true }
+async-trait = { workspace = true }
+tokio = { workspace = true }
 wasm-bindgen = { workspace = true }
 js-sys = { workspace = true }
 wasm-bindgen-futures = { workspace = true }
@@ -39,6 +41,10 @@ features = [
     "RtcSdpType",
     "RtcDataChannelState",
     "RtcRtpSender",
+    "RtcRtpTransceiver",
+    "RtcRtpTransceiverInit",
+    "RtcRtpEncodingParameters",
+    "RtcRtpTransceiverDirection",
 ]
 
 [dev-dependencies]

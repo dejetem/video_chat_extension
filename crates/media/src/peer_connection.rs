@@ -98,6 +98,44 @@ impl PeerConnectionManager {
         Ok(())
     }
 
+    pub fn add_track_with_simulcast(
+        &self,
+        track: &web_sys::MediaStreamTrack,
+        _stream: &web_sys::MediaStream,
+    ) -> Result<()> {
+        let init = web_sys::RtcRtpTransceiverInit::new();
+        init.set_direction(web_sys::RtcRtpTransceiverDirection::Sendrecv);
+
+        let encodings = Array::new();
+
+        // High quality
+        let h_enc = web_sys::RtcRtpEncodingParameters::new();
+        h_enc.set_rid("h");
+        h_enc.set_max_bitrate(2_500_000);
+        encodings.push(&h_enc);
+
+        // Medium quality
+        let m_enc = web_sys::RtcRtpEncodingParameters::new();
+        m_enc.set_rid("m");
+        m_enc.set_max_bitrate(750_000);
+        m_enc.set_scale_resolution_down_by(2.0);
+        encodings.push(&m_enc);
+
+        // Low quality
+        let l_enc = web_sys::RtcRtpEncodingParameters::new();
+        l_enc.set_rid("l");
+        l_enc.set_max_bitrate(150_000);
+        l_enc.set_scale_resolution_down_by(4.0);
+        encodings.push(&l_enc);
+
+        init.set_send_encodings(&encodings);
+
+        let _ = self
+            .connection
+            .add_transceiver_with_media_stream_track_and_init(track, &init);
+        Ok(())
+    }
+
     pub fn close(&self) {
         self.connection.close();
     }

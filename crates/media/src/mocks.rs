@@ -1,8 +1,33 @@
-// Since we can't easily mock web-sys types directly in unit tests running on host,
-// we often verify logic that DOESN'T depend on them, or we use traits.
-// For Stage 3, we'll focus on mocking internal logic if we refactor to traits.
-// Currently, `PeerConnectionManager` uses struct-impls, so we'll leave this empty
-// or use it for higher-level mocks in the future.
+use crate::Result;
+use async_trait::async_trait;
 
-// Placeholder for future mocks
-pub struct MockWebRtc;
+#[async_trait]
+pub trait SfuConnection {
+    async fn send_message(&self, msg: &str) -> Result<()>;
+    async fn receive_message(&self) -> Result<String>;
+}
+
+pub struct MockSfu {
+    pub last_sent: std::sync::Arc<tokio::sync::Mutex<Vec<String>>>,
+}
+
+impl MockSfu {
+    pub fn new() -> Self {
+        Self {
+            last_sent: std::sync::Arc::new(tokio::sync::Mutex::new(Vec::new())),
+        }
+    }
+}
+
+#[async_trait]
+impl SfuConnection for MockSfu {
+    async fn send_message(&self, msg: &str) -> Result<()> {
+        let mut sent = self.last_sent.lock().await;
+        sent.push(msg.to_string());
+        Ok(())
+    }
+
+    async fn receive_message(&self) -> Result<String> {
+        Ok("pong".to_string())
+    }
+}
