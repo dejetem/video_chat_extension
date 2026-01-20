@@ -26,3 +26,28 @@ async fn test_data_channel_negotiation() {
     let result = dc_mgr.create_data_channel(pc1_mgr.get_connection(), "chat");
     assert!(result.is_ok());
 }
+
+#[wasm_bindgen_test]
+async fn test_sdp_negotiation_flow() {
+    let stun_config = stun_config::default_stun_config();
+    let pc1 = PeerConnectionManager::new(&stun_config).unwrap();
+    let pc2 = PeerConnectionManager::new(&stun_config).unwrap();
+
+    // 1. Create Offer
+    let offer_sdp = pc1.create_offer().await.expect("Failed to create offer");
+    assert!(!offer_sdp.is_empty());
+
+    // 2. Set Remote on PC2
+    pc2.set_remote_description(&offer_sdp, web_sys::RtcSdpType::Offer)
+        .await
+        .expect("Failed to set remote offer");
+
+    // 3. Create Answer
+    let answer_sdp = pc2.create_answer().await.expect("Failed to create answer");
+    assert!(!answer_sdp.is_empty());
+
+    // 4. Set Remote on PC1
+    pc1.set_remote_description(&answer_sdp, web_sys::RtcSdpType::Answer)
+        .await
+        .expect("Failed to set remote answer");
+}
