@@ -28,6 +28,9 @@ serde-wasm-bindgen = "0.6"
 log = { workspace = true }
 wasm-logger = { workspace = true }
 thiserror = { workspace = true }
+wasm-bindgen-futures = { workspace = true }
 video-chat-core = { path = "../core" }
+video-chat-media = { path = "../media" }
+video-chat-signaling = { path = "../signaling" }
 [dev-dependencies]
 wasm-bindgen-test = "0.3"

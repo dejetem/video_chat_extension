@@ -6,6 +6,7 @@
 pub mod error;
 pub mod messages;
 pub mod protocol;
+pub mod stun_config;
 pub mod websocket;
 
 pub use error::{Error, Result};

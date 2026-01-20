@@ -7,3 +7,40 @@ license.workspace = true
 repository.workspace = true
 
 [dependencies]
+serde = { workspace = true, features = ["derive"] }
+serde_json = { workspace = true }
+thiserror = { workspace = true }
+anyhow = { workspace = true }
+log = { workspace = true }
+wasm-bindgen = { workspace = true }
+js-sys = { workspace = true }
+wasm-bindgen-futures = { workspace = true }
+
+video-chat-core = { path = "../core" }
+video-chat-signaling = { path = "../signaling" }
+
+[dependencies.web-sys]
+workspace = true
+features = [
+    "RtcPeerConnection",
+    "RtcPeerConnectionIceEvent",
+    "RtcDataChannel",
+    "RtcDataChannelEvent",
+    "RtcIceCandidate",
+    "RtcIceCandidateInit",
+    "RtcSessionDescription",
+    "RtcSessionDescriptionInit",
+    "RtcConfiguration",
+    "RtcIceServer",
+    "MediaStream",
+    "MediaStreamTrack",
+    "MessageEvent",
+    "ErrorEvent",
+    "RtcSdpType",
+    "RtcDataChannelState",
+    "RtcRtpSender",
+]
+
+[dev-dependencies]
+wasm-bindgen-test = "0.3"
+mockall = { workspace = true }
