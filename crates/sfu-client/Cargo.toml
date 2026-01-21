@@ -7,3 +7,20 @@ license.workspace = true
 repository.workspace = true
 
 [dependencies]
+video-chat-core = { path = "../core" }
+video-chat-signaling = { path = "../signaling" }
+video-chat-media = { path = "../media" }
+serde = { workspace = true }
+serde_json = { workspace = true }
+thiserror = { workspace = true }
+anyhow = { workspace = true }
+log = { workspace = true }
+async-trait = { workspace = true }
+tokio = { workspace = true, features = ["sync", "time"] }
+wasm-bindgen = { workspace = true }
+wasm-bindgen-futures = { workspace = true }
+futures = "0.3"
+
+[dev-dependencies]
+tokio = { workspace = true, features = ["full"] }
+mockall = { workspace = true }

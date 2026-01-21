@@ -36,6 +36,14 @@ pub enum Error {
     #[error("Database error: {0}")]
     Database(String),
 
+    /// Internal error
+    #[error("Internal error: {0}")]
+    Internal(String),
+
+    /// Media error conversion
+    #[error("Media error: {0}")]
+    Media(String),
+
     /// Generic error with context
     #[error("Error: {0}")]
     Other(#[from] anyhow::Error),
@@ -70,6 +78,11 @@ impl Error {
     /// Create a database error.
     pub fn database(msg: impl Into<String>) -> Self {
         Self::Database(msg.into())
+    }
+
+    /// Create an internal error.
+    pub fn internal(msg: impl Into<String>) -> Self {
+        Self::Internal(msg.into())
     }
 }
 
