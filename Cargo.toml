@@ -61,3 +61,17 @@ strip = true        # Strip symbols from binary
 
 [profile.release.package."*"]
 opt-level = "z"
+
+[workspace.metadata.tarpaulin]
+# These files/directories require a browser environment and cannot be tested by Tarpaulin (native).
+# We exclude them to get an accurate coverage report for our platform-agnostic logic.
+exclude-files = [
+    "crates/wasm/**/*",
+    "crates/media/src/peer_connection.rs",
+    "crates/media/src/data_channel.rs",
+    "crates/media/src/ice_handler.rs",
+    "crates/media/src/stream_manager.rs",
+]
+ignore-panics = true
+# Skip clean to speed up repeated runs
+skip-clean = true

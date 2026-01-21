@@ -25,3 +25,19 @@ impl Default for BandwidthStats {
         Self::new()
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_bandwidth_stats() {
+        let mut stats = BandwidthStats::new();
+        assert_eq!(stats.available_outgoing_bitrate, 0);
+
+        stats.update(1000, 500, 0.05);
+        assert_eq!(stats.available_outgoing_bitrate, 1000);
+        assert_eq!(stats.current_bitrate, 500);
+        assert_eq!(stats.packet_loss, 0.05);
+    }
+}

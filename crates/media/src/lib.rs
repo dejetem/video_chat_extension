@@ -41,7 +41,22 @@ pub enum MediaError {
 pub type Result<T> = std::result::Result<T, MediaError>;
 
 impl From<MediaError> for video_chat_core::Error {
-    fn from(err: MediaError) -> Self {
-        video_chat_core::Error::Media(err.to_string())
+    fn from(error: MediaError) -> Self {
+        video_chat_core::Error::Media(error.to_string())
+    }
+}
+
+#[cfg(test)]
+mod tests_lib {
+    use super::*;
+
+    #[test]
+    fn test_error_conversion() {
+        let media_err = MediaError::WebRtc("test".into());
+        let core_err: video_chat_core::Error = media_err.into();
+        match core_err {
+            video_chat_core::Error::Media(m) => assert_eq!(m, "WebRTC Error: test"),
+            _ => panic!("Incorrect error mapping"),
+        }
     }
 }

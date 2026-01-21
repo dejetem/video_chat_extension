@@ -104,6 +104,7 @@ cargo test --workspace
 
 # Run with coverage
 cargo tarpaulin --out Html --workspace
+chmod +x scripts/coverage.sh && ./scripts/coverage.sh
 
 # Run clippy
 cargo clippy --all-targets --all-features --workspace -- -D warnings

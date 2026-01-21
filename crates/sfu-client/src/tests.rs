@@ -1,11 +1,9 @@
 #[cfg(test)]
 mod tests_internal {
-    #[cfg(target_arch = "wasm32")]
     use crate::SfuClient;
     use std::sync::Arc;
     use std::time::Duration;
     use tokio::sync::Mutex;
-    #[cfg(target_arch = "wasm32")]
     use video_chat_signaling::stun_config::StunConfig;
 
     #[tokio::test]
@@ -19,6 +17,19 @@ mod tests_internal {
     }
 
     #[tokio::test]
+    #[cfg(target_arch = "wasm32")]
+    async fn test_sfu_client_subscriptions() {
+        let stun = StunConfig {
+            urls: vec!["stun:stun.l.google.com:19302".into()],
+        };
+        let client = SfuClient::new("test_room".into(), &stun).unwrap();
+
+        assert!(client.subscribe_to_stream("p1").await.is_ok());
+        assert!(client.unsubscribe_from_stream("p1").await.is_ok());
+    }
+
+    #[tokio::test]
+    #[cfg(target_arch = "wasm32")]
     async fn test_reconnection_logic() {
         use crate::reconnection::ReconnectionManager;
         let manager = ReconnectionManager::new(3, Duration::from_millis(10));
