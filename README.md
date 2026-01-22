@@ -90,7 +90,7 @@ This project is developed in **7 stages**, each with complete tests:
 | **1** | Core foundation & SFU signaling | Complete |
 | **2** | WASM bridge & SQLite | Complete |
 | **3** | Media streams & SFU connection | Complete |
-| **4** | SFU client & room management | Pending |
+| **4** | SFU client & room management | Complete |
 | **5** | UI & admin interface | Pending |
 | **6** | SFU server & production | Pending |
 
@@ -104,6 +104,7 @@ cargo test --workspace
 
 # Run with coverage
 cargo tarpaulin --out Html --workspace
+chmod +x scripts/coverage.sh && ./scripts/coverage.sh
 
 # Run clippy
 cargo clippy --all-targets --all-features --workspace -- -D warnings
