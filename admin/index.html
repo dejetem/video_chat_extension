@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Rust Video Chat - Admin Dashboard</title>
+    <link rel="stylesheet" href="styles.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+</head>
+
+<body>
+    <div class="sidebar">
+        <div class="sidebar-header">
+            <div class="logo-box">R</div>
+            <span>Admin Panel</span>
+        </div>
+        <nav>
+            <a href="#" class="active">Rooms</a>
+            <a href="#">Participants</a>
+            <a href="#">Analytics</a>
+            <a href="#">Settings</a>
+        </nav>
+        <div class="sidebar-footer">
+            v0.1.0-alpha
+        </div>
+    </div>
+
+    <main class="content">
+        <header>
+            <h2>Active Rooms</h2>
+            <button class="primary-btn" id="createRoomBtn">+ Create Room</button>
+        </header>
+
+        <div class="stats-grid">
+            <div class="stat-card">
+                <span class="stat-label">Total Rooms</span>
+                <span class="stat-value" id="totalRooms">--</span>
+            </div>
+            <div class="stat-card">
+                <span class="stat-label">Active Participants</span>
+                <span class="stat-value" id="totalParticipants">--</span>
+            </div>
+            <div class="stat-card">
+                <span class="stat-label">Avg. Latency</span>
+                <span class="stat-value" id="avgLatency">-- ms</span>
+            </div>
+        </div>
+
+        <section class="room-list-container">
+            <table class="room-table">
+                <thead>
+                    <tr>
+                        <th>Room ID</th>
+                        <th>Created</th>
+                        <th>Participants</th>
+                        <th>Status</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="roomTableBody">
+                    <!-- Dynamic content -->
+                </tbody>
+            </table>
+        </section>
+    </main>
+
+    <script src="app.js"></script>
+</body>
+
+</html>

@@ -125,12 +125,21 @@ cargo build --workspace
 # Release build (optimized)
 cargo build --workspace --release
 
-# WASM build
-cd crates/wasm && wasm-pack build --release --target web
+# WASM build (for extension)
+wasm-pack build crates/wasm --target web --out-dir ../../extension/pkg
 
 # Run benchmarks
 cargo bench
 ```
+
+## Project Status
+
+- [x] **Stage 1**: Core Foundation & WebRTC Signaling
+- [x] **Stage 2**: WASM Bridge & Chrome Extension Interface
+- [x] **Stage 3**: Media Stream Management & Peer Connections
+- [x] **Stage 4**: Rust-to-JS Bridge & UI Utilities
+- [x] **Stage 5**: UI Components & Admin Interface
+- [ ] **Stage 6**: Production Readiness (bundle size, benchmarks)
 
 ## Documentation
 
