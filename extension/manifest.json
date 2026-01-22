@@ -26,8 +26,12 @@
   },
   "web_accessible_resources": [
     {
-      "resources": ["video_chat_wasm_bg.wasm"],
-      "matches": ["<all_urls>"]
+      "resources": [
+        "pkg/video_chat_wasm_bg.wasm"
+      ],
+      "matches": [
+        "<all_urls>"
+      ]
     }
   ]
 }
