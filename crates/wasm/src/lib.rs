@@ -10,11 +10,30 @@ mod tests;
 
 use wasm_bindgen::prelude::*;
 
+pub mod sqlite;
+
+use crate::sqlite::Database;
+use once_cell::sync::Lazy;
+use std::sync::Mutex;
+
+static DB: Lazy<Mutex<Option<Database>>> = Lazy::new(|| Mutex::new(None));
+
 #[wasm_bindgen]
 pub fn init() {
     utils::set_panic_hook();
     utils::init_logging();
     log::info!("Video Chat Extension WASM initialized");
+
+    match Database::open_persistent("video_chat_logs.db") {
+        Ok(db) => {
+            let mut guard = DB.lock().unwrap();
+            *guard = Some(db);
+            log::info!("SQLite database initialized successfully");
+        }
+        Err(e) => {
+            log::error!("Failed to initialize SQLite database: {}", e);
+        }
+    }
 }
 
 #[wasm_bindgen]

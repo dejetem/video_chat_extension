@@ -32,5 +32,8 @@ wasm-bindgen-futures = { workspace = true }
 video-chat-core = { path = "../core" }
 video-chat-media = { path = "../media" }
 video-chat-signaling = { path = "../signaling" }
+sqlite-wasm-rs = "0.2"
+once_cell = "1.19"
+
 [dev-dependencies]
 wasm-bindgen-test = "0.3"
