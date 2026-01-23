@@ -4,7 +4,6 @@ use std::net::SocketAddr;
 use tracing::{info, Level};
 use tracing_subscriber::FmtSubscriber;
 use video_chat_core::config::Config;
-use video_chat_signaling::websocket;
 
 #[tokio::main]
 async fn main() -> Result<()> {
@@ -17,7 +16,7 @@ async fn main() -> Result<()> {
     info!("Starting Rust Video Chat SFU Server...");
 
     // Initial dummy configuration
-    let config = Config::default();
+    let _config = Config::default();
 
     // Build our application with a single route
     let app = Router::new()

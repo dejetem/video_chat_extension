@@ -2,7 +2,6 @@ mod chrome_api;
 mod js_interop;
 pub mod media;
 mod schema;
-mod sqlite;
 mod utils;
 
 #[cfg(test)]

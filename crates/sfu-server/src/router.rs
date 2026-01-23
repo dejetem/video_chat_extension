@@ -1,12 +1,10 @@
 use std::sync::Arc;
-use tokio::sync::mpsc;
 use tracing::info;
-use webrtc::rtp_transceiver::rtp_receiver::RTPReceiver;
+use webrtc::rtp_transceiver::rtp_receiver::RTCRtpReceiver;
 use webrtc::track::track_local::track_local_static_rtp::TrackLocalStaticRTP;
 
 pub struct MediaRouter {
     // Mapping from track ID to list of downstream subscribers
-    // Future: Use lock-free structures or fine-grained locking for performance
 }
 
 impl MediaRouter {
@@ -16,7 +14,7 @@ impl MediaRouter {
 
     pub async fn route_track(
         &self,
-        _receiver: Arc<RTPReceiver>,
+        _receiver: Arc<RTCRtpReceiver>,
         _output_track: Arc<TrackLocalStaticRTP>,
     ) {
         info!("Setting up media routing for track");
