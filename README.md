@@ -143,11 +143,20 @@ cargo bench
 
 ## Documentation
 
-- [Implementation Plan](docs/implementation_plan.md) - Detailed development roadmap
-- [Architecture](docs/architecture.md) - System design and P2P mesh topology
-- [API Documentation](docs/api.md) - Rust API reference
-- [Deployment Guide](docs/deployment.md) - Production deployment steps
-- [Cloudflare Tunnel Setup](docs/cloudflare-tunnel.md) - Tunnel configuration
+Comprehensive guides are available in the `docs/` directory:
+
+- **[Architecture](docs/architecture.md)** - System design, SFU architecture, and data flow
+- **[API Reference](docs/api.md)** - WASM interface and signaling protocol
+- **[Deployment Guide](docs/deployment.md)** - Server deployment and Cloudflare Tunnel setup
+- **[SFU Setup](docs/sfu-setup.md)** - Detailed SFU server configuration
+- **[User Guide](docs/user-guide.md)** - End-user instructions for the extension
+- **[CHANGELOG](CHANGELOG.md)** - Version history and release notes
+
+### Quick Links
+
+- **Benchmarks**: Run `cargo bench` to see performance metrics
+- **Telemetry**: See `crates/core/src/telemetry.rs` for logging and analytics
+- **SQLite WASM**: Persistent storage implementation in `crates/wasm/src/sqlite.rs`
 
 ## Contributing
 

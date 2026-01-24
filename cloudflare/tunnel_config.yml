@@ -1,0 +1,21 @@
+tunnel: <YOUR_TUNNEL_ID>
+credentials-file: /root/.cloudflared/<YOUR_TUNNEL_ID>.json
+
+ingress:
+  - hostname: signaling.yourdomain.com
+    service: http://localhost:8080
+  - hostname: sfu.yourdomain.com
+    service: http://localhost:3000
+  - service: http_status:404
+
+# tunnel: <YOUR_TUNNEL_ID>
+# credentials-file: /root/.cloudflared/<YOUR_TUNNEL_ID>.json
+
+# ingress:
+#   # Route to signaling server
+#   - hostname: signaling-abc123.cfargotunnel.com
+#     service: http://localhost:8080
+#   # Route to SFU server  
+#   - hostname: sfu-abc123.cfargotunnel.com
+#     service: http://localhost:3000
+#   - service: http_status:404
