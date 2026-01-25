@@ -51,3 +51,101 @@ impl RoomManager {
         }
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_room_manager_creation() {
+        let manager = RoomManager::new();
+        // Room manager should initialize successfully
+        assert!(manager.rooms.try_read().is_ok());
+    }
+
+    #[test]
+    fn test_room_creation() {
+        let room = Room {
+            id: "test-room".to_string(),
+            participants: HashMap::new(),
+        };
+        assert_eq!(room.id, "test-room");
+        assert!(room.participants.is_empty());
+    }
+
+    #[test]
+    fn test_participant_creation() {
+        let participant = Participant {
+            id: "participant-1".to_string(),
+        };
+        assert_eq!(participant.id, "participant-1");
+    }
+
+    #[tokio::test]
+    async fn test_join_room() {
+        let manager = RoomManager::new();
+        manager
+            .join_room("room1".to_string(), "participant1".to_string())
+            .await;
+
+        let rooms = manager.rooms.read().await;
+        assert!(rooms.contains_key("room1"));
+    }
+
+    #[tokio::test]
+    async fn test_leave_room() {
+        let manager = RoomManager::new();
+
+        // Join first
+        manager
+            .join_room("room1".to_string(), "participant1".to_string())
+            .await;
+
+        // Then leave
+        manager.leave_room("room1", "participant1").await;
+
+        // Room should be removed when empty
+        let rooms = manager.rooms.read().await;
+        assert!(!rooms.contains_key("room1"));
+    }
+
+    #[tokio::test]
+    async fn test_multiple_participants() {
+        let manager = RoomManager::new();
+
+        manager
+            .join_room("room1".to_string(), "p1".to_string())
+            .await;
+        manager
+            .join_room("room1".to_string(), "p2".to_string())
+            .await;
+        manager
+            .join_room("room1".to_string(), "p3".to_string())
+            .await;
+
+        let rooms = manager.rooms.read().await;
+        if let Some(room) = rooms.get("room1") {
+            assert_eq!(room.participants.len(), 3);
+        }
+    }
+
+    #[tokio::test]
+    async fn test_room_cleanup_when_empty() {
+        let manager = RoomManager::new();
+
+        // Add and remove participants
+        manager
+            .join_room("room1".to_string(), "p1".to_string())
+            .await;
+        manager
+            .join_room("room1".to_string(), "p2".to_string())
+            .await;
+
+        manager.leave_room("room1", "p1").await;
+        manager.leave_room("room1", "p2").await;
+
+        // Room should be automatically removed
+        let rooms = manager.rooms.read().await;
+        assert!(!rooms.contains_key("room1"));
+    }
+}
