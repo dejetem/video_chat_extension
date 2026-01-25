@@ -25,7 +25,8 @@ impl RoomManager {
     }
 
     pub async fn join_room(&self, room_id: String, participant_id: String) {
-        let mut rooms = self.rooms.write().await;
+        let mut rooms: tokio::sync::RwLockWriteGuard<'_, HashMap<String, Room>> =
+            self.rooms.write().await;
         let room = rooms.entry(room_id.clone()).or_insert_with(|| {
             info!("Creating new room on server: {}", room_id);
             Room {
@@ -41,7 +42,8 @@ impl RoomManager {
     }
 
     pub async fn leave_room(&self, room_id: &str, participant_id: &str) {
-        let mut rooms = self.rooms.write().await;
+        let mut rooms: tokio::sync::RwLockWriteGuard<'_, HashMap<String, Room>> =
+            self.rooms.write().await;
         if let Some(room) = rooms.get_mut(room_id) {
             room.participants.remove(participant_id);
             if room.participants.is_empty() {

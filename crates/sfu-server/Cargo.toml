@@ -6,6 +6,11 @@ authors.workspace = true
 license.workspace = true
 repository.workspace = true
 
+
+[[bench]]
+name = "sfu_server_bench"
+harness = false
+
 [dependencies]
 # Core and Signaling
 video-chat-core = { path = "../core" }
@@ -32,6 +37,8 @@ tracing-subscriber = { version = "0.3", features = ["env-filter"] }
 # Error Handling
 anyhow = { workspace = true }
 thiserror = { workspace = true }
+chrono = "0.4.43"
 
 [dev-dependencies]
 mockall = { workspace = true }
+criterion = { version = "0.5", features = ["async_tokio"] }
