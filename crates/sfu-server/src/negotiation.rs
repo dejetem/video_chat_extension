@@ -42,20 +42,39 @@ impl NegotiationManager {
                     .with_interceptor_registry(registry)
                     .build();
 
+                // Load ICE server configuration from environment variables
+                let stun_url = std::env::var("STUN_URL")
+                    .unwrap_or_else(|_| "stun:stun.l.google.com:19302".to_string());
+                let turn_username =
+                    std::env::var("TURN_USERNAME").unwrap_or_else(|_| "".to_string());
+                let turn_credential =
+                    std::env::var("TURN_CREDENTIAL").unwrap_or_else(|_| "".to_string());
+
+                // Build ICE servers list
+                let mut ice_servers = vec![RTCIceServer {
+                    urls: vec![stun_url],
+                    ..Default::default()
+                }];
+
+                // Add TURN servers if credentials are provided
+                if !turn_username.is_empty() && !turn_credential.is_empty() {
+                    // Add all TURN server URLs from environment
+                    for i in 1..=4 {
+                        if let Ok(turn_url) = std::env::var(format!("TURN_URL_{}", i)) {
+                            ice_servers.push(RTCIceServer {
+                                urls: vec![turn_url.clone()],
+                                username: turn_username.clone(),
+                                credential: turn_credential.clone(),
+                                ..Default::default()
+                            });
+                            tracing::info!("Added TURN server: {}", turn_url);
+                        }
+                    }
+                }
+
                 // Create PeerConnection
                 let config = RTCConfiguration {
-                    ice_servers: vec![
-                        RTCIceServer {
-                            urls: vec!["stun:stun.l.google.com:19302".to_owned()],
-                            ..Default::default()
-                        },
-                        RTCIceServer {
-                            urls: vec!["turn:openrelay.metered.ca:80".to_owned()],
-                            username: "openrelayproject".to_owned(),
-                            credential: "openrelayproject".to_owned(),
-                            ..Default::default()
-                        },
-                    ],
+                    ice_servers,
                     ..Default::default()
                 };
                 let pc = api.new_peer_connection(config).await?;
