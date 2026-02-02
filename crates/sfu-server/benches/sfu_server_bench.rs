@@ -1,5 +1,4 @@
 use criterion::{black_box, criterion_group, criterion_main, Criterion, Throughput};
-use std::time::Duration;
 
 fn benchmark_simulcast_selection(c: &mut Criterion) {
     let mut group = c.benchmark_group("simulcast_selection");

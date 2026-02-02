@@ -23,6 +23,53 @@ document.addEventListener('DOMContentLoaded', () => {
         chrome.runtime.sendMessage({ action: "toggleCam", enabled: camOn });
     });
 
+    // Open Full-Page Web Interface
+    const toggleScreen = document.getElementById('toggleScreen');
+    const roomIdInput = document.getElementById('roomIdInput');
+    const joinRoomBtn = document.getElementById('joinRoomBtn');
+
+    // Fetch tunnel URLs from server config
+    let tunnelConfig = {
+        tunnelUrl: 'http://localhost:8080',
+        tunnelWsUrl: 'ws://localhost:8080/ws'
+    };
+
+    // Try to fetch config from server
+    fetch('http://localhost:8080/api/config')
+        .then(res => res.json())
+        .then(config => {
+            tunnelConfig.tunnelUrl = config.tunnelUrl;
+            tunnelConfig.tunnelWsUrl = config.tunnelWsUrl;
+            console.log('Loaded tunnel config:', tunnelConfig);
+        })
+        .catch(err => {
+            console.warn('Failed to load config, using defaults:', err);
+        });
+
+    joinRoomBtn.addEventListener('click', () => {
+        const roomId = roomIdInput.value.trim() || "default-room";
+
+        statusEl.textContent = "Joining...";
+
+        chrome.runtime.sendMessage({
+            action: "joinRoom",
+            roomId: roomId,
+            signalingUrl: tunnelConfig.tunnelWsUrl
+        }, (response) => {
+            if (response && response.status === "success") {
+                addMessage(`Joined room: ${roomId}`, 'received');
+            } else {
+                addMessage(`Failed to join: ${response ? response.message : 'Unknown error'}`, 'received');
+            }
+        });
+    });
+
+    toggleScreen.addEventListener('click', () => {
+        const roomId = roomIdInput.value.trim() || "default-room";
+        const externalUrl = `${tunnelConfig.tunnelUrl}/index.html?room=${roomId}`;
+        window.open(externalUrl, '_blank');
+    });
+
     const addMessage = (text, type = 'sent') => {
         const msgDiv = document.createElement('div');
         msgDiv.className = `message ${type}`;
@@ -63,6 +110,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    // Initial check for room
-    chrome.runtime.sendMessage({ action: "joinRoom", roomId: "default-room" });
+    // Ready
+    console.log("Popup ready for room interaction");
 });

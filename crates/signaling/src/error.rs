@@ -28,6 +28,10 @@ pub enum Error {
     #[error("Serialization error: {0}")]
     Serialization(#[from] serde_json::Error),
 
+    /// Network or WebSocket error
+    #[error("Network error: {0}")]
+    Network(String),
+
     /// Core error
     #[error(transparent)]
     Core(#[from] video_chat_core::Error),

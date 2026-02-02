@@ -9,6 +9,7 @@ impl SimulcastManager {
         }
 
         // Bandwidth thresholds in bps
+        #[allow(dead_code)]
         const LOW_THRESHOLD: u32 = 150_000; // 150 kbps
         const MID_THRESHOLD: u32 = 500_000; // 500 kbps
         const HIGH_THRESHOLD: u32 = 1_500_000; // 1.5 Mbps

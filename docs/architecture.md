@@ -15,15 +15,14 @@ graph TD
     end
 
     subgraph "Server Infrastructure"
-        SigServer[Signaling Server]
-        SFU[SFU Server]
+        SFU[SFU & Signaling Server]
     end
 
     UI <--> WASM
     WASM <--> Media
     WASM <--> SignalingClient
     WASM <--> DB
-    SignalingClient <--> SigServer
+    SignalingClient <--> SFU
     Media <--> SFU
 ```
 
@@ -42,7 +41,7 @@ Implements the WebSocket-based signaling protocol. It is used by both the client
 The entry point for the browser extension. It uses `wasm-bindgen` to expose Rust functionality to JavaScript and handles local persistence via SQLite.
 
 ### 5. crates/sfu-server
-A Selective Forwarding Unit (SFU) that routes media packets between participants without transcoding, ensuring low latency and high scalability.
+The unified backend server that handles both WebSocket signaling (room management) and media routing (SFU). It routes media packets between participants without transcoding.
 
 ## Data Flow
 

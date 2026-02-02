@@ -10,6 +10,12 @@ pub struct Recorder {
     >,
 }
 
+impl Default for Recorder {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl Recorder {
     pub fn new() -> Self {
         Self {

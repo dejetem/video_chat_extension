@@ -1,6 +1,7 @@
 // Platform-agnostic tests for SFU client
+
 #[cfg(test)]
-mod tests {
+mod unit_tests {
     use crate::reconnection::ReconnectionManager;
     use std::time::Duration;
 

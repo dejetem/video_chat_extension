@@ -7,6 +7,12 @@ pub struct BandwidthEstimator {
     packet_history: Arc<RwLock<Vec<(Instant, usize)>>>,
 }
 
+impl Default for BandwidthEstimator {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl BandwidthEstimator {
     pub fn new() -> Self {
         Self {
@@ -33,6 +39,6 @@ impl BandwidthEstimator {
         }
 
         // Calculate bits per second
-        (total_bytes as u32 * 8)
+        total_bytes as u32 * 8
     }
 }

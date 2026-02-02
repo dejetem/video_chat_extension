@@ -98,6 +98,34 @@ impl PeerConnectionManager {
         Ok(())
     }
 
+    pub async fn add_ice_candidate(&self, candidate: &web_sys::RtcIceCandidateInit) -> Result<()> {
+        // Create RtcIceCandidate from Init
+        let candidate_obj = web_sys::RtcIceCandidate::new(candidate).map_err(|e| {
+            MediaError::WebRtc(format!("Failed to create RtcIceCandidate: {:?}", e))
+        })?;
+
+        let promise = self
+            .connection
+            .add_ice_candidate_with_opt_rtc_ice_candidate(Some(&candidate_obj));
+        JsFuture::from(promise)
+            .await
+            .map_err(|e| MediaError::WebRtc(format!("Failed to add ICE candidate: {:?}", e)))?;
+        Ok(())
+    }
+
+    pub fn add_track(
+        &self,
+        track: &web_sys::MediaStreamTrack,
+        _stream: &web_sys::MediaStream,
+    ) -> Result<()> {
+        // Use addTransceiver instead of addTrack to avoid simulcast and variadic arguments
+        // This creates a transceiver in sendrecv mode without simulcast encodings
+        let _ = self
+            .connection
+            .add_transceiver_with_media_stream_track(track);
+        Ok(())
+    }
+
     pub fn add_track_with_simulcast(
         &self,
         track: &web_sys::MediaStreamTrack,
@@ -138,5 +166,44 @@ impl PeerConnectionManager {
 
     pub fn close(&self) {
         self.connection.close();
+    }
+
+    pub fn set_audio_enabled(&self, enabled: bool) -> Result<()> {
+        self.set_track_enabled("audio", enabled)
+    }
+
+    pub fn set_video_enabled(&self, enabled: bool) -> Result<()> {
+        self.set_track_enabled("video", enabled)
+    }
+
+    fn set_track_enabled(&self, kind: &str, enabled: bool) -> Result<()> {
+        let senders = self.connection.get_senders();
+        for i in 0..senders.length() {
+            let sender = Reflect::get(&senders, &i.into())
+                .map_err(|e| MediaError::WebRtc(format!("Failed to get sender: {:?}", e)))?
+                .dyn_into::<web_sys::RtcRtpSender>()
+                .map_err(|_| MediaError::WebRtc("Invalid sender type".into()))?;
+
+            if let Some(track) = sender.track() {
+                if track.kind() == kind {
+                    track.set_enabled(enabled);
+                    info!("Set {} track enabled: {}", kind, enabled);
+                }
+            }
+        }
+        Ok(())
+    }
+    pub fn set_onicecandidate<F>(&self, callback: F)
+    where
+        F: Fn(web_sys::RtcPeerConnectionIceEvent) + 'static,
+    {
+        let onicecandidate =
+            Closure::wrap(Box::new(move |event: web_sys::RtcPeerConnectionIceEvent| {
+                callback(event);
+            }) as Box<dyn FnMut(_)>);
+
+        self.connection
+            .set_onicecandidate(Some(onicecandidate.as_ref().unchecked_ref()));
+        onicecandidate.forget();
     }
 }

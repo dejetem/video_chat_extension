@@ -29,6 +29,10 @@ impl Database {
     pub fn get_messages(&self, _room_id: &str) -> Result<Vec<(String, String, String, i64)>> {
         Ok(Vec::new())
     }
+
+    pub fn delete_messages(&self, _room_id: &str) -> Result<()> {
+        Ok(())
+    }
 }
 
 #[cfg(target_arch = "wasm32")]
@@ -170,12 +174,25 @@ mod wasm_impl {
             }
             Ok(messages)
         }
+
+        pub fn delete_messages(&self, room_id: &str) -> Result<()> {
+            let sql = "DELETE FROM chat_logs WHERE room_id = ?";
+            let sql_c = CString::new(sql).unwrap();
+            unsafe {
+                let mut stmt = ptr::null_mut();
+                sqlite3_prepare_v2(self.db, sql_c.as_ptr(), -1, &mut stmt, ptr::null_mut());
+                sqlite3_bind_text(stmt, 1, CString::new(room_id).unwrap().as_ptr(), -1, None);
+                sqlite3_step(stmt);
+                sqlite3_finalize(stmt);
+            }
+            Ok(())
+        }
     }
 
     impl Drop for Database {
         fn drop(&mut self) {
             unsafe {
-                sqlite3_close_v2(self.db);
+                sqlite3_close(self.db);
             }
         }
     }

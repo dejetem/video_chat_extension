@@ -1,22 +1,26 @@
 document.addEventListener('DOMContentLoaded', () => {
     console.log('Admin Dashboard Initialized');
 
-    // Mock Data
-    const mockRooms = [
-        { id: 'room-101', created: '2026-01-22 10:30', participants: 4, status: 'Active' },
-        { id: 'dev-session', created: '2026-01-22 11:45', participants: 2, status: 'Active' },
-        { id: 'quick-chat', created: '2026-01-22 12:10', participants: 0, status: 'Idle' }
-    ];
+    // Real Data Fetching
+    async function fetchRooms() {
+        try {
+            const response = await fetch('/api/rooms'); // Assuming served by same server
+            const rooms = await response.json();
+            renderRooms(rooms);
+        } catch (e) {
+            console.error('Failed to fetch rooms:', e);
+        }
+    }
 
     const roomTableBody = document.getElementById('roomTableBody');
     const totalRoomsEl = document.getElementById('totalRooms');
     const totalParticipantsEl = document.getElementById('totalParticipants');
 
-    function renderRooms() {
+    function renderRooms(rooms) {
         roomTableBody.innerHTML = '';
         let totalParts = 0;
 
-        mockRooms.forEach(room => {
+        rooms.forEach(room => {
             totalParts += room.participants;
             const tr = document.createElement('tr');
             tr.innerHTML = `
@@ -25,27 +29,28 @@ document.addEventListener('DOMContentLoaded', () => {
                 <td>${room.participants}</td>
                 <td><span class="status-badge">${room.status}</span></td>
                 <td>
-                    <button class="action-btn">View</button>
-                    <button class="action-btn delete">Close</button>
+                    <button class="action-btn" onclick="window.open('/index.html?room=${room.id}', '_blank')">View</button>
+                    <button class="action-btn delete" onclick="closeRoom('${room.id}')">Close</button>
                 </td>
             `;
             roomTableBody.appendChild(tr);
         });
 
-        totalRoomsEl.textContent = mockRooms.length;
+        totalRoomsEl.textContent = rooms.length;
         totalParticipantsEl.textContent = totalParts;
     }
 
-    document.getElementById('createRoomBtn').addEventListener('click', () => {
-        const id = 'room-' + Math.floor(Math.random() * 1000);
-        mockRooms.push({
-            id: id,
-            created: new Date().toISOString().slice(0, 16).replace('T', ' '),
-            participants: 0,
-            status: 'Idle'
-        });
-        renderRooms();
-    });
+    window.closeRoom = async (roomId) => {
+        if (!confirm(`Are you sure you want to close room ${roomId} and clear all participant logs?`)) return;
+        try {
+            await fetch(`/api/close-room/${roomId}`, { method: 'POST' });
+            fetchRooms(); // Refresh
+        } catch (e) {
+            console.error('Failed to close room:', e);
+        }
+    };
 
-    renderRooms();
+    // Poll for updates
+    fetchRooms();
+    setInterval(fetchRooms, 5000);
 });

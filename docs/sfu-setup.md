@@ -35,7 +35,7 @@ The SFU server currently uses environment-based configuration (via `video-chat-c
 
 | Environment Variable | Description | Default |
 | :--- | :--- | :--- |
-| `SFU_PORT` | Port for the SFU to listen on | `3000` |
+| `SFU_PORT` | Port for the SFU to listen on | `8080` |
 | `SFU_LOG_LEVEL` | Logging level (info, debug, trace) | `info` |
 
 ## WebRTC Specifics

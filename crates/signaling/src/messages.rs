@@ -95,6 +95,16 @@ pub enum MessageType {
         participant_id: String,
     },
 
+    /// Chat message to be relayed to all participants in the room
+    Chat {
+        /// Room ID
+        room_id: String,
+        /// Sender participant ID
+        participant_id: String,
+        /// Message text
+        text: String,
+    },
+
     /// Error message
     Error {
         /// Error code
@@ -102,6 +112,9 @@ pub enum MessageType {
         /// Error message
         message: String,
     },
+
+    /// Keepalive pong
+    Pong,
 }
 
 /// Complete signaling message with metadata.
@@ -131,10 +144,17 @@ impl Message {
 
     /// Get current timestamp in milliseconds.
     fn current_timestamp() -> u64 {
-        std::time::SystemTime::now()
-            .duration_since(std::time::UNIX_EPOCH)
-            .unwrap()
-            .as_millis() as u64
+        #[cfg(target_arch = "wasm32")]
+        {
+            js_sys::Date::now() as u64
+        }
+        #[cfg(not(target_arch = "wasm32"))]
+        {
+            std::time::SystemTime::now()
+                .duration_since(std::time::UNIX_EPOCH)
+                .unwrap()
+                .as_millis() as u64
+        }
     }
 
     /// Serialize message to JSON.

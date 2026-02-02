@@ -455,6 +455,16 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "c3e64b0cc0439b12df2fa678eae89a1c56a529fd067a9115f7827f1fffd22b32"
 
 [[package]]
+name = "console_error_panic_hook"
+version = "0.1.7"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "a06aeb73f470f66dcdbf7223caeebb85984942f22f1adb2a088cf9668146bbbc"
+dependencies = [
+ "cfg-if",
+ "wasm-bindgen",
+]
+
+[[package]]
 name = "const-oid"
 version = "0.9.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -692,6 +702,12 @@ dependencies = [
  "quote",
  "syn 2.0.114",
 ]
+
+[[package]]
+name = "dotenv"
+version = "0.15.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "77c90badedccf4105eca100756a0b1289e191f6fcbdadd3cee1d2f614f97da8f"
 
 [[package]]
 name = "downcast"
@@ -2882,6 +2898,7 @@ dependencies = [
  "anyhow",
  "async-trait",
  "futures",
+ "js-sys",
  "log",
  "mockall",
  "serde",
@@ -2893,6 +2910,7 @@ dependencies = [
  "video-chat-signaling",
  "wasm-bindgen",
  "wasm-bindgen-futures",
+ "web-sys",
 ]
 
 [[package]]
@@ -2903,6 +2921,7 @@ dependencies = [
  "axum",
  "chrono",
  "criterion",
+ "dotenv",
  "futures-util",
  "mockall",
  "serde",
@@ -2922,6 +2941,7 @@ dependencies = [
 name = "video-chat-signaling"
 version = "0.1.0"
 dependencies = [
+ "js-sys",
  "log",
  "proptest",
  "serde",
@@ -2929,21 +2949,24 @@ dependencies = [
  "thiserror 1.0.69",
  "tokio",
  "video-chat-core",
+ "wasm-bindgen",
+ "web-sys",
 ]
 
 [[package]]
 name = "video-chat-wasm"
 version = "0.1.0"
 dependencies = [
+ "console_error_panic_hook",
  "js-sys",
  "log",
- "once_cell",
  "serde",
  "serde-wasm-bindgen",
  "sqlite-wasm-rs",
  "thiserror 1.0.69",
  "video-chat-core",
  "video-chat-media",
+ "video-chat-sfu-client",
  "video-chat-signaling",
  "wasm-bindgen",
  "wasm-bindgen-futures",
