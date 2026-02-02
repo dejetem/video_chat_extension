@@ -126,7 +126,23 @@ fn initialize_client(room_id: String, signaling_url: String) {
             }
         });
 
-        js_interop::dispatch_event("messageReceived", &text);
+        // Determine sender label: "You" if it's our message, "Participant" otherwise
+        // Get our participant ID from the SFU_CLIENT
+        let sender_label = SFU_CLIENT.with(|c| {
+            if let Some(client) = c.borrow().as_ref() {
+                if sender_id == client.participant_id {
+                    "You"
+                } else {
+                    "Participant"
+                }
+            } else {
+                "Participant"
+            }
+        });
+
+        // Create message data with sender label and text
+        let message_data = format!("{}:{}", sender_label, text);
+        js_interop::dispatch_event("messageReceived", &message_data);
     }) as Box<dyn Fn(String) + Send + 'static>);
 
     match SfuClient::new(room_id, &signaling_url, &stun_config, on_msg) {

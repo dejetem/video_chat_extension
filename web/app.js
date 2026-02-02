@@ -180,7 +180,16 @@ document.addEventListener('DOMContentLoaded', async () => {
 
         switch (type) {
             case "messageReceived":
-                addMessage(data, "Participant");
+                // Data format is "sender:text"
+                const colonIndex = data.indexOf(':');
+                if (colonIndex > 0) {
+                    const sender = data.substring(0, colonIndex);
+                    const text = data.substring(colonIndex + 1);
+                    addMessage(text, sender);
+                } else {
+                    // Fallback if format is unexpected
+                    addMessage(data, "Participant");
+                }
                 break;
             case "trackReceived":
                 handleTrackReceived(data);
