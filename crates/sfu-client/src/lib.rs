@@ -22,7 +22,7 @@ pub struct SfuClient {
     pub peer_connection: Arc<PeerConnectionManager>,
     pub room_id: String,
     subscribed_streams: Arc<tokio::sync::RwLock<std::collections::HashSet<String>>>,
-    data_channel: Arc<Mutex<DataChannelManager>>,
+    _data_channel: Arc<Mutex<DataChannelManager>>,
     pub signaling: Arc<AsyncMutex<WebSocketSignaling>>,
 }
 
@@ -193,7 +193,7 @@ impl SfuClient {
             subscribed_streams: Arc::new(
                 tokio::sync::RwLock::new(std::collections::HashSet::new()),
             ),
-            data_channel: Arc::new(Mutex::new(dc_manager)),
+            _data_channel: Arc::new(Mutex::new(dc_manager)),
             signaling,
         })
     }
@@ -215,7 +215,7 @@ impl SfuClient {
                                 sdp_type: video_chat_signaling::messages::SdpType::Offer,
                                 sdp: offer_sdp,
                             },
-                            participant_id: participant_id,
+                            participant_id,
                         },
                     );
                     let sig = signaling.lock().await;
