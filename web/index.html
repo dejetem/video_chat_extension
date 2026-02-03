@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Rust Video Chat | Connect Securely</title>
+    <link rel="stylesheet" href="styles.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+</head>
+
+<body>
+    <div class="main-viewport">
+        <!-- Connection Status Overlay -->
+        <div id="loadingOverlay"
+            style="position: absolute; inset: 0; background: black; z-index: 1000; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 20px;">
+            <div class="logo-large" style="font-size: 3rem; font-weight: 800; letter-spacing: -2px;">RUST <span
+                    style="color: var(--accent-color);">CALL</span></div>
+            <div id="loadingStatus">Initializing Secure SFU Connection...</div>
+            <div class="spinner"></div>
+        </div>
+
+        <div id="videoGrid" class="video-grid">
+            <!-- Local and Remote videos will be injected here -->
+            <div class="video-card local" id="localVideoContainer">
+                <video id="localVideo" autoplay muted playsinline></video>
+                <div class="participant-name">You</div>
+            </div>
+        </div>
+
+        <div class="control-bar">
+            <button id="toggleMic" class="btn-circle active" title="Mute Microphone">🎤</button>
+            <button id="toggleCam" class="btn-circle active" title="Disable Camera">📷</button>
+            <button id="toggleScreen" class="btn-circle" title="Share Screen">🖥️</button>
+
+            <div style="width: 20px;"></div>
+
+            <button id="shareLink" class="share-link-btn">
+                <span>Share Link</span>
+                <span style="font-size: 0.8rem;">↗</span>
+            </button>
+
+            <div style="width: 20px;"></div>
+
+            <button id="leaveCall" class="btn-circle danger" title="End Call">📞</button>
+        </div>
+    </div>
+
+    <aside class="sidebar">
+        <div class="sidebar-header">
+            <h3>Meeting Chat</h3>
+            <span id="roomBadge"
+                style="font-size: 0.75rem; background: var(--border-color); padding: 4px 8px; border-radius: 4px;">ROOM:
+                --</span>
+        </div>
+
+        <div id="chatMessages" class="chat-messages">
+            <div class="message">
+                <div class="message-content" style="background: var(--accent-color); color: black; font-weight: 500;">
+                    Secure connection established. All chat logs are transient.
+                </div>
+            </div>
+        </div>
+
+        <div class="chat-input-container" style="padding: 20px; border-top: 1px solid var(--border-color);">
+            <div style="display: flex; gap: 10px;">
+                <input type="text" id="chatInput" placeholder="Message everyone..."
+                    style="flex: 1; background: rgba(255,255,255,0.05); border: 1px solid var(--border-color); padding: 12px; border-radius: 8px; color: white; outline: none;">
+                <button id="sendMsg"
+                    style="background: var(--accent-color); border: none; padding: 0 16px; border-radius: 8px; font-weight: 600; cursor: pointer;">Send</button>
+            </div>
+        </div>
+    </aside>
+
+    <script type="module" src="app.js"></script>
+</body>
+
+</html>

@@ -1,0 +1,225 @@
+:root {
+    --bg-color: #000000;
+    --card-bg: rgba(25, 25, 30, 0.7);
+    --glass-bg: rgba(255, 255, 255, 0.05);
+    --accent-color: #10b981;
+    --text-primary: #f9f9f9;
+    --text-secondary: #a1a1aa;
+    --danger-color: #ef4444;
+    --border-color: rgba(255, 255, 255, 0.1);
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    background-color: var(--bg-color);
+    color: var(--text-primary);
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    height: 100vh;
+    overflow: hidden;
+    display: flex;
+}
+
+/* Layout */
+.main-viewport {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    position: relative;
+}
+
+.video-grid {
+    flex: 1;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+    gap: 16px;
+    padding: 24px;
+    overflow-y: auto;
+    align-content: center;
+}
+
+/* Video Card */
+.video-card {
+    background-color: var(--card-bg);
+    border-radius: 16px;
+    border: 1px solid var(--border-color);
+    position: relative;
+    overflow: hidden;
+    aspect-ratio: 16 / 9;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+    transition: transform 0.3s ease;
+}
+
+.video-card:hover {
+    transform: scale(1.02);
+    border-color: var(--accent-color);
+}
+
+.video-card video {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.participant-name {
+    position: absolute;
+    bottom: 12px;
+    left: 12px;
+    background: rgba(0, 0, 0, 0.6);
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 0.85rem;
+    backdrop-filter: blur(4px);
+}
+
+/* Sidebar Chat */
+.sidebar {
+    width: 350px;
+    background: var(--glass-bg);
+    backdrop-filter: blur(12px);
+    border-left: 1px solid var(--border-color);
+    display: flex;
+    flex-direction: column;
+    z-index: 10;
+}
+
+.sidebar-header {
+    padding: 20px;
+    border-bottom: 1px solid var(--border-color);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.chat-messages {
+    flex: 1;
+    padding: 20px;
+    overflow-y: auto;
+}
+
+.message {
+    margin-bottom: 16px;
+    max-width: 85%;
+}
+
+.message.received {
+    align-self: flex-start;
+}
+
+.message-content {
+    background: rgba(255, 255, 255, 0.08);
+    padding: 10px 14px;
+    border-radius: 12px 12px 12px 0;
+    font-size: 0.9rem;
+}
+
+/* Control Bar */
+.control-bar {
+    position: absolute;
+    bottom: 30px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(20, 20, 25, 0.85);
+    backdrop-filter: blur(20px);
+    padding: 12px 24px;
+    border-radius: 40px;
+    display: flex;
+    gap: 20px;
+    border: 1px solid var(--border-color);
+    box-shadow: 0 15px 45px rgba(0, 0, 0, 0.7);
+    z-index: 100;
+}
+
+.btn-circle {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    border: none;
+    background: rgba(255, 255, 255, 0.1);
+    color: white;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.2rem;
+    transition: all 0.2s ease;
+}
+
+.btn-circle:hover {
+    background: rgba(255, 255, 255, 0.2);
+    transform: translateY(-2px);
+}
+
+.btn-circle.active {
+    background: var(--accent-color);
+}
+
+.btn-circle.danger {
+    background: var(--danger-color);
+}
+
+.share-link-btn {
+    background: var(--text-primary);
+    color: var(--bg-color);
+    border: none;
+    padding: 0 24px;
+    border-radius: 40px;
+    font-weight: 600;
+    cursor: pointer;
+    font-size: 0.9rem;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.share-link-btn:hover {
+    background: white;
+    box-shadow: 0 0 15px rgba(255, 255, 255, 0.3);
+}
+
+/* Scrollbars */
+::-webkit-scrollbar {
+    width: 6px;
+}
+
+::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 10px;
+}
+
+/* Screen Share Small Box */
+.video-card.screen-share-box {
+    position: fixed;
+    bottom: 100px;
+    right: 370px;
+    /* To the left of the sidebar */
+    width: 240px;
+    height: 135px;
+    z-index: 1000;
+    border: 2px solid var(--accent-color);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.8);
+    transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.video-card.screen-share-box:hover {
+    transform: scale(1.1);
+    z-index: 1001;
+}
+
+.video-card.screen-share-box .participant-name {
+    font-size: 0.7rem;
+    bottom: 4px;
+    left: 4px;
+    padding: 2px 8px;
+}

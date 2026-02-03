@@ -1,52 +1,42 @@
-import init, {
-    init as initWasm,
-    create_room,
-    join_room,
-    toggle_microphone,
-    toggle_camera,
-    send_message
-} from './pkg/video_chat_wasm.js';
+// Background Service Worker for Rust Video Chat
+console.log("Video Chat Service Worker Initialized");
 
-// Initialize WASM when the service worker starts
-async function run() {
-    try {
-        await init();
-        initWasm();
-        console.log("Rust WASM initialized in Service Worker");
-    } catch (e) {
-        console.error("Failed to initialize Rust WASM:", e);
+async function ensureOffscreen() {
+    if (await chrome.offscreen.hasDocument()) {
+        return;
     }
+
+    await chrome.offscreen.createDocument({
+        url: 'offscreen.html',
+        reasons: ['USER_MEDIA', 'WEB_RTC'],
+        justification: 'Hosting WASM/WebRTC stack for real-time video calls (not available in SW)'
+    });
+    console.log("Offscreen document created");
 }
 
-// Listen for messages from popup or content scripts
+// Proxy messages to offscreen context
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
-    switch (request.action) {
-        case "createRoom":
-            create_room(request.roomId);
-            sendResponse({ status: "success" });
-            break;
-        case "joinRoom":
-            join_room(request.roomId);
-            sendResponse({ status: "success" });
-            break;
-        case "toggleMic":
-            toggle_microphone(request.enabled);
-            sendResponse({ status: "success" });
-            break;
-        case "toggleCam":
-            toggle_camera(request.enabled);
-            sendResponse({ status: "success" });
-            break;
-        case "sendMessage":
-            send_message(request.text);
-            sendResponse({ status: "success" });
-            break;
-    }
-    return true; // Keep message channel open for async response
+    // Skip if it's already targeted at offscreen
+    if (request.target === "offscreen") return;
+
+    console.log("SW proxying message to offscreen:", request.action);
+
+    (async () => {
+        try {
+            await ensureOffscreen();
+            // Wrap original message to target offscreen
+            const offscreenMsg = { ...request, target: "offscreen" };
+            const response = await chrome.runtime.sendMessage(offscreenMsg);
+            sendResponse(response);
+        } catch (e) {
+            console.error("SW failed to proxy message:", e);
+            sendResponse({ status: "error", message: e.message });
+        }
+    })();
+
+    return true; // Keep channel open
 });
 
 chrome.runtime.onInstalled.addListener(() => {
     console.log("Video Chat Extension Installed");
 });
-
-run();

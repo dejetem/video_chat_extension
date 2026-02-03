@@ -6,4 +6,40 @@ authors.workspace = true
 license.workspace = true
 repository.workspace = true
 
+
+[[bench]]
+name = "sfu_server_bench"
+harness = false
+
 [dependencies]
+# Core and Signaling
+video-chat-core = { path = "../core" }
+video-chat-signaling = { path = "../signaling" }
+
+# Async and Networking
+tokio = { version = "1.0", features = ["full"] }
+axum = { version = "0.7", features = ["ws"] }
+tower-http = { version = "0.5", features = ["cors", "fs"] }
+tower = "0.4"
+futures-util = "0.3"
+
+# WebRTC (Server-side)
+webrtc = "0.11"
+
+# Serialization
+serde = { workspace = true }
+serde_json = { workspace = true }
+
+# Logging
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+
+# Error Handling
+anyhow = { workspace = true }
+thiserror = { workspace = true }
+chrono = "0.4.43"
+dotenv = "0.15"
+
+[dev-dependencies]
+mockall = { workspace = true }
+criterion = { version = "0.5", features = ["async_tokio"] }

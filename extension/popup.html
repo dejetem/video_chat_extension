@@ -33,9 +33,17 @@
         </button>
     </div>
 
+    <div class="room-controls"
+        style="padding: 10px; border-bottom: 1px solid var(--border-color); display: flex; gap: 8px; background: rgba(255,255,255,0.02);">
+        <input type="text" id="roomIdInput" placeholder="Room ID (e.g. default)"
+            style="flex: 1; background: #222; border: 1px solid #444; color: white; padding: 6px 12px; border-radius: 4px; outline: none;">
+        <button id="joinRoomBtn"
+            style="background: var(--accent-color); border: none; color: black; font-weight: bold; padding: 0 12px; border-radius: 4px; cursor: pointer;">Join</button>
+    </div>
+
     <div id="chatArea" class="chat-area">
         <!-- Messages will be injected here -->
-        <div class="message received">Welcome to Rust Video Chat! Create or join a room to start.</div>
+        <div class="message received">Enter a Room ID and click Join to start a call.</div>
     </div>
 
     <div class="input-area">

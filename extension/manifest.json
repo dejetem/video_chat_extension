@@ -7,7 +7,11 @@
     "activeTab",
     "storage",
     "tabs",
-    "unlimitedStorage"
+    "unlimitedStorage",
+    "offscreen"
+  ],
+  "host_permissions": [
+    "<all_urls>"
   ],
   "background": {
     "service_worker": "background.js",
@@ -38,7 +42,8 @@
     {
       "resources": [
         "pkg/video_chat_wasm_bg.wasm",
-        "content/inject.js"
+        "content/inject.js",
+        "content/content.js"
       ],
       "matches": [
         "<all_urls>"

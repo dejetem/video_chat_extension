@@ -18,7 +18,7 @@ all = "deny"
 # pedantic = "warn"
 
 [workspace.package]
-version = "0.1.0"
+version = "0.1.7" # Bump version to signal Rebuild
 edition = "2021"
 authors = ["Simon Jonathan <enyejonathansimon@yahoo.com>"]
 license = "MIT OR Apache-2.0"
@@ -44,8 +44,8 @@ wasm-bindgen-futures = "0.4"
 
 # WASM
 wasm-bindgen = "0.2"
-web-sys = "0.3"
-js-sys = "0.3"
+web-sys = "0.3.85"
+js-sys = "0.3.85"
 serde-wasm-bindgen = "0.6"
 
 # Testing

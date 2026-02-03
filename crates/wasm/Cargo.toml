@@ -19,8 +19,14 @@ web-sys = { workspace = true, features = [
     "Window",
     "WorkerGlobalScope",
     "ServiceWorkerGlobalScope",
-    "Storage", 
-    "Storage"
+    "Storage",
+    "CustomEvent",
+    "CustomEventInit",
+    "Document",
+    "Element",
+    "HtmlVideoElement",
+    "HtmlMediaElement",
+    "RtcTrackEvent"
 ] }
 js-sys = { workspace = true }
 serde = { workspace = true, features = ["derive"] }
@@ -32,5 +38,16 @@ wasm-bindgen-futures = { workspace = true }
 video-chat-core = { path = "../core" }
 video-chat-media = { path = "../media" }
 video-chat-signaling = { path = "../signaling" }
+video-chat-sfu-client = { path = "../sfu-client" }
+sqlite-wasm-rs = "0.2"
+console_error_panic_hook = "0.1"
+
 [dev-dependencies]
 wasm-bindgen-test = "0.3"
+
+[profile.release]
+# Optimize for small footprint
+opt-level = "z"
+lto = true
+codegen-units = 1
+# panic = "abort"

@@ -1,10 +1,10 @@
 # Video Chat Extension
 
-A production-ready Chrome extension for group video calls built with Rust, WebAssembly, and WebRTC.
+A proof of concept Chrome extension for group video calls built with Rust, WebAssembly, and WebRTC.
 
 ## Features
 
-- **SFU Architecture**: Scalable Selective Forwarding Unit supporting 100+ participants
+- **SFU Architecture**: Scalable Selective Forwarding Unit (not tested for 100+  participants)
 - **WebRTC DataChannels**: Low-latency chat messaging without central relay
 - **SQLite-WASM**: Local persistent storage using Origin Private File System (OPFS)
 - **Cloudflare Tunnel**: Secure external access via `cloudflared`
@@ -139,15 +139,24 @@ cargo bench
 - [x] **Stage 3**: Media Stream Management & Peer Connections
 - [x] **Stage 4**: Rust-to-JS Bridge & UI Utilities
 - [x] **Stage 5**: UI Components & Admin Interface
-- [ ] **Stage 6**: Production Readiness (bundle size, benchmarks)
+- [x] **Stage 6**: Production Readiness (SFU Server, SQLite Persistence, Telemetry)
 
 ## Documentation
 
-- [Implementation Plan](docs/implementation_plan.md) - Detailed development roadmap
-- [Architecture](docs/architecture.md) - System design and P2P mesh topology
-- [API Documentation](docs/api.md) - Rust API reference
-- [Deployment Guide](docs/deployment.md) - Production deployment steps
-- [Cloudflare Tunnel Setup](docs/cloudflare-tunnel.md) - Tunnel configuration
+Comprehensive guides are available in the `docs/` directory:
+
+- **[Architecture](docs/architecture.md)** - System design, SFU architecture, and data flow
+- **[API Reference](docs/api.md)** - WASM interface and signaling protocol
+- **[Deployment Guide](docs/deployment.md)** - Server deployment and Cloudflare Tunnel setup
+- **[SFU Setup](docs/sfu-setup.md)** - Detailed SFU server configuration
+- **[User Guide](docs/user-guide.md)** - End-user instructions for the extension
+- **[CHANGELOG](CHANGELOG.md)** - Version history and release notes
+
+### Quick Links
+
+- **Benchmarks**: Run `cargo bench` to see performance metrics
+- **Telemetry**: See `crates/core/src/telemetry.rs` for logging and analytics
+- **SQLite WASM**: Persistent storage implementation in `crates/wasm/src/sqlite.rs`
 
 ## Contributing
 

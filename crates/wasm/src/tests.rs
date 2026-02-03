@@ -21,7 +21,7 @@ fn test_from_js_value() {
 #[wasm_bindgen_test]
 fn test_create_room_smoke() {
     // Just a smoke test to ensure no panics
-    crate::create_room("test-room".into());
+    crate::create_room("test-room".into(), "ws://localhost:8080/ws".into());
 }
 
 #[wasm_bindgen_test]
