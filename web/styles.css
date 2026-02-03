@@ -197,16 +197,18 @@ body {
     background: rgba(255, 255, 255, 0.1);
     border-radius: 10px;
 }
+
 /* Screen Share Small Box */
 .video-card.screen-share-box {
     position: fixed;
     bottom: 100px;
-    right: 370px; /* To the left of the sidebar */
+    right: 370px;
+    /* To the left of the sidebar */
     width: 240px;
     height: 135px;
     z-index: 1000;
     border: 2px solid var(--accent-color);
-    box-shadow: 0 10px 30px rgba(0,0,0,0.8);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.8);
     transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
 }
 

@@ -38,7 +38,8 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     // 1. Initialize WASM
     try {
-        await init();
+        // Explicitly load WASM with cache busting to prevent stale binary
+        await init(`./pkg/video_chat_wasm_bg.wasm?v=${Date.now()}`);
         initWasm();
         wasmInitialized = true;
         console.log('Rust WASM loaded successfully');
@@ -69,15 +70,48 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     // 2. Media Setup
     async function setupLocalMedia() {
+        let stream = null;
+
+        // Try different media configurations in order of preference
         try {
-            const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+            // Try video + audio first
+            stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+            console.log('Got video + audio');
+        } catch (e) {
+            console.warn('Could not get video + audio:', e.message);
+
+            try {
+                // Try audio only
+                stream = await navigator.mediaDevices.getUserMedia({ video: false, audio: true });
+                console.log('Got audio only (no video)');
+            } catch (e2) {
+                console.warn('Could not get audio:', e2.message);
+
+                try {
+                    // Try video only
+                    stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
+                    console.log('Got video only (no audio)');
+                } catch (e3) {
+                    console.warn('Could not get video:', e3.message);
+                    console.warn('No media devices available - continuing without local media');
+
+                    // Hide local video container if no media
+                    const localContainer = document.getElementById('localVideoContainer');
+                    if (localContainer) {
+                        localContainer.style.display = 'none';
+                    }
+                    return; // Exit early - no media available
+                }
+            }
+        }
+
+        // If we got a stream, use it
+        if (stream) {
             localVideo.srcObject = stream;
 
             if (wasmInitialized) {
                 add_stream(stream);
             }
-        } catch (e) {
-            console.warn('Media access denied:', e);
         }
     }
 
@@ -147,29 +181,63 @@ document.addEventListener('DOMContentLoaded', async () => {
     // 5. Screen Share
     const toggleScreen = document.getElementById('toggleScreen');
     let screenStream = null;
+    let screenSharePreview = null; // Local preview element
+
     toggleScreen.addEventListener('click', async () => {
         try {
             if (!screenStream) {
+                // Get screen share stream
                 screenStream = await navigator.mediaDevices.getDisplayMedia({ video: true });
                 toggleScreen.classList.add('active');
                 addMessage("Started screen sharing", "System");
 
+                // Create local preview for screen share
+                screenSharePreview = document.createElement('div');
+                screenSharePreview.className = 'video-card screen-share-box';
+                screenSharePreview.id = 'local-screen-share';
+                screenSharePreview.innerHTML = `
+                    <video id="localScreenVideo" autoplay playsinline muted></video>
+                    <div class="participant-name">Your Shared Screen</div>
+                `;
+                document.body.appendChild(screenSharePreview);
+
+                // Attach stream to preview
+                const localScreenVideo = document.getElementById('localScreenVideo');
+                localScreenVideo.srcObject = screenStream;
+
+                // Send screen share to other participants
                 if (wasmInitialized) {
                     add_stream(screenStream);
                 }
 
+                // Handle when user stops sharing via browser UI
                 screenStream.getVideoTracks()[0].onended = () => {
                     screenStream = null;
                     toggleScreen.classList.remove('active');
                     addMessage("Stopped screen sharing", "System");
+
+                    // Remove local preview
+                    if (screenSharePreview) {
+                        screenSharePreview.remove();
+                        screenSharePreview = null;
+                    }
                 };
             } else {
+                // Stop screen sharing
                 screenStream.getTracks().forEach(t => t.stop());
                 screenStream = null;
                 toggleScreen.classList.remove('active');
+                addMessage("Stopped screen sharing", "System");
+
+                // Remove local preview
+                if (screenSharePreview) {
+                    screenSharePreview.remove();
+                    screenSharePreview = null;
+                }
             }
         } catch (err) {
             console.error("Screen share failed:", err);
+            addMessage("Screen share failed: " + err.message, "System");
         }
     });
 
@@ -212,30 +280,232 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
     });
 
-    function handleTrackReceived(trackId) {
-        console.log("Handling remote track:", trackId);
+    function handleTrackReceived(data) {
+        console.log("=== TRACK RECEIVED ===");
 
-        // Determine if this is a screen share based on track ID or label
-        // Screen share tracks typically have "screen" in their ID
-        const isScreenShare = trackId.toLowerCase().includes('screen');
+        let trackId = data;
+        let participantId = null;
+        let kind = 'video'; // Default
 
-        const videoCard = document.createElement('div');
-        videoCard.className = isScreenShare ? 'video-card screen-share-box' : 'video-card remote';
-        const videoId = `remote-video-${trackId}`;
-        videoCard.innerHTML = `
-            <video id="${videoId}" autoplay playsinline></video>
-            <div class="participant-name">${isScreenShare ? 'Shared Screen' : 'Participant'}</div>
-        `;
-
-        if (isScreenShare) {
-            // Screen shares go in a small floating box
-            document.body.appendChild(videoCard);
-        } else {
-            // Regular participant videos go in the grid
-            videoGrid.appendChild(videoCard);
+        // Parse "trackId|participantId|kind" format
+        if (data.includes('|')) {
+            const parts = data.split('|');
+            trackId = parts[0];
+            participantId = parts[1];
+            if (parts.length > 2) {
+                kind = parts[2];
+            }
         }
 
-        // Attach track to video element
-        attach_remote_track(videoId, trackId);
+        console.log("Track RECEIVED:", trackId, "Participant:", participantId, "Kind:", kind);
+
+        // Detect Screen Share
+        const isScreenShare = trackId.toLowerCase().includes('screen');
+
+        // 1. Screen Share (Separate Box)
+        if (isScreenShare) {
+            console.log("Creating SCREEN SHARE element for track:", trackId);
+            const videoId = `remote-video-${trackId}`;
+            if (document.getElementById(videoId)) return;
+
+            const videoCard = document.createElement('div');
+            videoCard.className = 'video-card screen-share-box';
+            videoCard.setAttribute('data-track-id', trackId);
+            if (participantId) videoCard.setAttribute('data-participant-id', participantId);
+
+            videoCard.innerHTML = `
+                <video id="${videoId}" autoplay playsinline muted></video>
+                <div class="participant-name">Shared Screen</div>
+            `;
+            document.body.appendChild(videoCard);
+            attach_remote_track(videoId, trackId);
+            return;
+        }
+
+        // 2. Audio Track (Hidden but Active)
+        if (kind === 'audio') {
+            const audioId = `remote-audio-${trackId}`;
+            if (document.getElementById(audioId)) {
+                console.log("Audio element already exists, skipping:", audioId);
+                return;
+            }
+
+            console.log("Creating audio element for track:", trackId);
+            const audioEl = document.createElement('audio');
+            audioEl.id = audioId;
+            audioEl.autoplay = true;
+
+            // IMPORTANT: display:none can pause playback in some browsers.
+            // Use 1px size and absolute position instead.
+            audioEl.style.position = 'absolute';
+            audioEl.style.width = '1px';
+            audioEl.style.height = '1px';
+            audioEl.style.opacity = '0.01';
+            audioEl.style.pointerEvents = 'none';
+            audioEl.style.zIndex = '-1';
+
+            if (participantId) audioEl.setAttribute('data-participant-id', participantId);
+            document.body.appendChild(audioEl);
+
+            // Attach track to audio element
+            if (typeof attach_remote_track === 'function') {
+                attach_remote_track(audioId, trackId);
+                // Force play after a short delay to ensure attached
+                setTimeout(() => {
+                    audioEl.play().catch(e => console.warn("Audio autoplay failed, waiting for user interaction:", e));
+                }, 500);
+            }
+        }
+
+        // 3. Manage Visual Participant Card (Unified)
+        if (!participantId) {
+            console.warn("No participant ID for track, cannot group elements");
+            return;
+        }
+
+        const cardId = `participant-card-${participantId}`;
+        let participantCard = document.getElementById(cardId);
+
+        // Create Card if missing
+        if (!participantCard) {
+            console.log("Creating new Participant Card for:", participantId);
+            participantCard = document.createElement('div');
+            participantCard.id = cardId;
+            participantCard.className = 'video-card remote';
+            participantCard.setAttribute('data-participant-id', participantId);
+
+            // Default: Audio Placeholder
+            participantCard.innerHTML = `
+                <div class="video-placeholder" id="placeholder-${participantId}" style="width:100%; height:100%; display:flex; flex-direction:column; align-items:center; justify-content:center; background:#222;">
+                    <div class="avatar" style="font-size:3rem;">👤</div>
+                    <div class="status" style="margin-top:10px; color:#aaa;">Audio Only</div>
+                </div>
+                <div class="participant-name">${participantId}</div>
+            `;
+            videoGrid.appendChild(participantCard);
+        } else {
+            console.log("Participant Card already exists for:", participantId);
+        }
+
+        // If Video: Upgrade Card
+        if (kind === 'video') {
+            const videoId = `remote-video-${trackId}`;
+            console.log("Processing VIDEO track:", trackId, "for participant:", participantId);
+
+            // Check if THIS specific video track is already attached
+            if (document.getElementById(videoId)) {
+                console.log("Video element already exists for this track:", videoId);
+                return;
+            }
+
+            // Check if Card already has ANY video (avoid duplicate videos in one card)
+            // QUANTUM FIX: Strict duplicate check
+            // If the card already has a video element, we should be very careful.
+            // If the EXISTING video has the SAME track ID, do nothing.
+            // If the EXISTING video has a DIFFERENT track ID, replace it.
+            const existingVideo = participantCard.querySelector('video');
+            if (existingVideo) {
+                // Check if it's the same track ID attached
+                // We stored it in data attribute I presume? Or we check ID.
+                if (existingVideo.id === videoId) {
+                    console.log("Video element ALREADY exists and matches ID. Skipping duplicate creation.");
+                    return;
+                }
+                console.warn("Card has video, but ID mismatch. Replacing.", existingVideo.id, "with", videoId);
+                existingVideo.remove();
+            }
+
+
+            // Remove placeholder
+            const placeholder = document.getElementById(`placeholder-${participantId}`);
+            if (placeholder) placeholder.remove();
+
+            // Create Video Element
+            const videoEl = document.createElement('video');
+            videoEl.id = videoId;
+            videoEl.autoplay = true;
+            videoEl.playsInline = true;
+            videoEl.muted = true; // Start muted to allow autoplay
+            videoEl.style.width = '100%';
+            videoEl.style.height = '100%';
+            videoEl.style.objectFit = 'cover';
+
+            // Insert video at top of card
+            participantCard.insertBefore(videoEl, participantCard.firstChild);
+
+            // Attach track
+            attach_remote_track(videoId, trackId);
+
+            // DEBUG: Monitor Video Stats
+            const statsInterval = setInterval(() => {
+                const v = document.getElementById(videoId);
+                if (!v) {
+                    clearInterval(statsInterval);
+                    return;
+                }
+                if (v.videoWidth > 0 || v.readyState >= 2) {
+                    console.log(`Video ${videoId} ALIVE: ${v.videoWidth}x${v.videoHeight}, State: ${v.readyState}, Paused: ${v.paused}, Muted: ${v.muted}`);
+                    clearInterval(statsInterval);
+                } else {
+                    console.log(`Video ${videoId} WAITING: State: ${v.readyState}, Paused: ${v.paused}, NetState: ${v.networkState}`);
+                }
+            }, 2000);
+
+            // Force play
+            setTimeout(() => {
+                videoEl.play().catch(e => console.warn("Video autoplay failed:", e));
+            }, 500);
+
+            // Cleanup listener
+            videoEl.srcObject.getTracks().forEach(t => {
+                t.onended = () => {
+                    console.log("Video track ended:", trackId);
+                    clearInterval(statsInterval);
+                    videoEl.remove();
+                    // If no video left, show placeholder?
+                    if (!participantCard.querySelector('video')) {
+                        const ph = document.createElement('div');
+                        ph.className = 'video-placeholder';
+                        ph.id = `placeholder-${participantId}`;
+                        ph.style.cssText = "width:100%; height:100%; display:flex; flex-direction:column; align-items:center; justify-content:center; background:#222;";
+                        ph.innerHTML = `
+                            <div class="avatar" style="font-size:3rem;">👤</div>
+                            <div class="status" style="margin-top:10px; color:#aaa;">Audio Only</div>
+                        `;
+                        participantCard.insertBefore(ph, participantCard.firstChild);
+                    }
+                };
+            });
+        }
+
+        console.log("=== END TRACK RECEIVED ===");
     }
+
+    // Handle participant disconnect - remove their video elements
+    window.addEventListener('rust-video-chat-event', (event) => {
+        const { event: type, data } = event.detail;
+
+        if (type === "participantLeft") {
+            const participantId = data;
+            console.log("Participant left, removing video elements for:", participantId);
+
+            // Remove all video elements for this participant
+            const elementsToRemove = document.querySelectorAll(`[data-participant-id="${participantId}"]`);
+            elementsToRemove.forEach(el => {
+                console.log("Removing stale video element:", el);
+                el.remove();
+            });
+
+            if (elementsToRemove.length === 0) {
+                console.log("No elements found for participant:", participantId);
+            }
+        }
+    });
+
+    // Clean up on page unload
+    window.addEventListener('beforeunload', () => {
+        if (wasmInitialized) {
+            leave_room();
+        }
+    });
 });

@@ -11,6 +11,7 @@ mod recorder;
 mod room_manager;
 mod router;
 mod simulcast;
+mod utils;
 
 use crate::negotiation::NegotiationManager; // Import NegotiationManager
 use crate::recorder::Recorder;
@@ -87,7 +88,7 @@ async fn config_handler() -> axum::Json<serde_json::Value> {
     // Read tunnel URLs from environment variables
     let tunnel_url =
         std::env::var("TUNNEL_URL").unwrap_or_else(|_| "http://localhost:8080".to_string());
-    let tunnel_ws_url = std::env::var("TUNNEL_WEB_SOCKET_URL")
+    let tunnel_ws_url = std::env::var("TUNNEL_WEB_S_SOCKET_URL")
         .unwrap_or_else(|_| "ws://localhost:8080/ws".to_string());
 
     axum::Json(serde_json::json!({
@@ -194,8 +195,24 @@ async fn handle_socket(socket: WebSocket, state: AppState) {
                             current_participant = Some(participant_id.clone());
                             state
                                 .room_manager
-                                .join_room(room_id, participant_id, Some(tx.clone()))
+                                .join_room(
+                                    room_id.clone(),
+                                    participant_id.clone(),
+                                    Some(tx.clone()),
+                                )
                                 .await;
+
+                            // Send RoomJoined with ICE configuration
+                            let ice_servers = crate::utils::load_ice_servers();
+                            let joined_msg = SignalingMessage::new(
+                                format!("joined-{}", signaling_msg.id),
+                                MessageType::RoomJoined {
+                                    room_id,
+                                    participant_id,
+                                    ice_servers,
+                                },
+                            );
+                            let _ = tx.send(joined_msg);
                         }
                         MessageType::Subscribe {
                             target_id,

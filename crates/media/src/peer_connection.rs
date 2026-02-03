@@ -3,6 +3,7 @@ use js_sys::{Array, Reflect};
 use log::info;
 use video_chat_signaling::stun_config::StunConfig;
 use wasm_bindgen::prelude::*;
+use wasm_bindgen::JsCast;
 use wasm_bindgen_futures::JsFuture;
 use web_sys::{RtcConfiguration, RtcIceServer, RtcPeerConnection, RtcSessionDescriptionInit};
 
@@ -15,9 +16,24 @@ impl PeerConnectionManager {
         let rtc_config = RtcConfiguration::new();
 
         let ice_servers = Array::new();
-        for url in &stun_config.urls {
+        for server_config in &stun_config.ice_servers {
             let server = RtcIceServer::new();
-            server.set_urls(&JsValue::from_str(url));
+
+            // Set URLs
+            let urls_array = Array::new();
+            for url in &server_config.urls {
+                urls_array.push(&JsValue::from_str(url));
+            }
+            server.set_urls(&urls_array);
+
+            // Set Credentials if present
+            if let Some(username) = &server_config.username {
+                server.set_username(username);
+            }
+            if let Some(credential) = &server_config.credential {
+                server.set_credential(credential);
+            }
+
             ice_servers.push(&server);
         }
         rtc_config.set_ice_servers(&ice_servers);
@@ -27,8 +43,8 @@ impl PeerConnectionManager {
         })?;
 
         info!(
-            "Created RTCPeerConnection with STUN servers: {:?}",
-            stun_config.urls
+            "Created RTCPeerConnection with {} ICE servers",
+            stun_config.ice_servers.len()
         );
 
         Ok(Self { connection })
@@ -193,17 +209,55 @@ impl PeerConnectionManager {
         }
         Ok(())
     }
+    pub fn update_ice_servers(&self, stun_config: &StunConfig) -> Result<()> {
+        let rtc_config = RtcConfiguration::new();
+        let ice_servers = Array::new();
+
+        for server_config in &stun_config.ice_servers {
+            let server = RtcIceServer::new();
+
+            let urls_array = Array::new();
+            for url in &server_config.urls {
+                urls_array.push(&JsValue::from_str(url));
+            }
+            server.set_urls(&urls_array);
+
+            if let Some(username) = &server_config.username {
+                server.set_username(username);
+            }
+            if let Some(credential) = &server_config.credential {
+                server.set_credential(credential);
+            }
+
+            ice_servers.push(&server);
+        }
+        rtc_config.set_ice_servers(&ice_servers);
+
+        // Use Reflect and JsCast to call setConfiguration to avoid web-sys version signature issues
+        let set_config_fn = Reflect::get(&self.connection, &JsValue::from_str("setConfiguration"))
+            .map_err(|e| MediaError::WebRtc(format!("Failed to get setConfiguration: {:?}", e)))?
+            .dyn_into::<js_sys::Function>()
+            .map_err(|_| MediaError::WebRtc("setConfiguration is not a function".into()))?;
+
+        let _ = set_config_fn
+            .call1(&self.connection, &rtc_config)
+            .map_err(|e| MediaError::WebRtc(format!("Failed to call setConfiguration: {:?}", e)))?;
+
+        info!(
+            "Updated RTCPeerConnection with {} ICE servers",
+            stun_config.ice_servers.len()
+        );
+        Ok(())
+    }
+
     pub fn set_onicecandidate<F>(&self, callback: F)
     where
         F: Fn(web_sys::RtcPeerConnectionIceEvent) + 'static,
     {
-        let onicecandidate =
-            Closure::wrap(Box::new(move |event: web_sys::RtcPeerConnectionIceEvent| {
-                callback(event);
-            }) as Box<dyn FnMut(_)>);
-
+        let closure =
+            Closure::wrap(Box::new(callback) as Box<dyn Fn(web_sys::RtcPeerConnectionIceEvent)>);
         self.connection
-            .set_onicecandidate(Some(onicecandidate.as_ref().unchecked_ref()));
-        onicecandidate.forget();
+            .set_onicecandidate(Some(closure.as_ref().unchecked_ref()));
+        closure.forget();
     }
 }

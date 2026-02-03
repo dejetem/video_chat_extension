@@ -1,10 +1,10 @@
 # Video Chat Extension
 
-A production-ready Chrome extension for group video calls built with Rust, WebAssembly, and WebRTC.
+A proof of concept Chrome extension for group video calls built with Rust, WebAssembly, and WebRTC.
 
 ## Features
 
-- **SFU Architecture**: Scalable Selective Forwarding Unit supporting 100+ participants
+- **SFU Architecture**: Scalable Selective Forwarding Unit (not tested for 100+  participants)
 - **WebRTC DataChannels**: Low-latency chat messaging without central relay
 - **SQLite-WASM**: Local persistent storage using Origin Private File System (OPFS)
 - **Cloudflare Tunnel**: Secure external access via `cloudflared`

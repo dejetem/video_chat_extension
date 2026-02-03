@@ -2,13 +2,14 @@ use std::collections::HashMap;
 use std::sync::Arc;
 use tokio::sync::RwLock;
 use tracing::info;
-
 use webrtc::peer_connection::RTCPeerConnection;
+use webrtc::rtp_transceiver::rtp_codec::RTCRtpCodecParameters;
 
 pub struct Participant {
     pub id: String,
     pub peer_connection: std::sync::Mutex<Option<Arc<RTCPeerConnection>>>,
-    pub published_tracks: Vec<String>,
+    pub published_tracks: RwLock<HashMap<String, RTCRtpCodecParameters>>, /* RwLock for interior
+                                                                           * mutability */
     pub sender: Option<tokio::sync::mpsc::UnboundedSender<video_chat_signaling::Message>>,
 }
 
@@ -54,7 +55,7 @@ impl RoomManager {
             Arc::new(Participant {
                 id: participant_id,
                 peer_connection: std::sync::Mutex::new(None),
-                published_tracks: Vec::new(),
+                published_tracks: RwLock::new(HashMap::new()),
                 sender,
             }),
         );
@@ -64,6 +65,21 @@ impl RoomManager {
         let mut rooms = self.rooms.write().await;
         if let Some(room) = rooms.get_mut(room_id) {
             room.participants.remove(participant_id);
+
+            // Broadcast ParticipantLeft to remaining participants
+            let left_msg = video_chat_signaling::Message::new(
+                format!("left-{}", chrono::Utc::now().timestamp_millis()),
+                video_chat_signaling::MessageType::ParticipantLeft {
+                    participant_id: participant_id.to_string(),
+                },
+            );
+
+            for participant in room.participants.values() {
+                if let Some(sender) = &participant.sender {
+                    let _ = sender.send(left_msg.clone());
+                }
+            }
+
             if room.participants.is_empty() {
                 info!("Room {} is empty, removing", room_id);
                 rooms.remove(room_id);
@@ -188,6 +204,49 @@ impl RoomManager {
         }
         connections
     }
+
+    pub async fn add_published_track(
+        &self,
+        room_id: &str,
+        participant_id: &str,
+        track_id: String,
+        codec: RTCRtpCodecParameters,
+    ) {
+        let mut rooms = self.rooms.write().await;
+        if let Some(room) = rooms.get_mut(room_id) {
+            if let Some(participant) = room.participants.get(participant_id) {
+                // get() is enough as we assume Arc, but wait room.participants stores
+                // Arc<Participant> so we get &Arc. We need deref.
+                participant
+                    .published_tracks
+                    .write()
+                    .await
+                    .insert(track_id, codec);
+            }
+        }
+    }
+
+    pub async fn get_all_published_tracks_except(
+        &self,
+        room_id: &str,
+        exclude_participant_id: &str,
+    ) -> Vec<(String, String, RTCRtpCodecParameters)> {
+        let rooms = self.rooms.read().await;
+        let mut result = Vec::new();
+
+        if let Some(room) = rooms.get(room_id) {
+            for (pid, participant) in &room.participants {
+                if pid != exclude_participant_id {
+                    // Acquire read lock on published_tracks
+                    let tracks = participant.published_tracks.read().await;
+                    for (track_id, codec) in tracks.iter() {
+                        result.push((pid.clone(), track_id.clone(), codec.clone()));
+                    }
+                }
+            }
+        }
+        result
+    }
 }
 
 #[cfg(test)]
@@ -210,17 +269,17 @@ mod tests {
         assert!(room.participants.is_empty());
     }
 
-    #[test]
-    fn test_participant_creation() {
+    #[tokio::test]
+    async fn test_participant_creation() {
         let participant = Participant {
             id: "participant-1".to_string(),
             peer_connection: std::sync::Mutex::new(None),
-            published_tracks: Vec::new(),
+            published_tracks: RwLock::new(HashMap::new()),
             sender: None,
         };
         assert_eq!(participant.id, "participant-1");
         assert!(participant.peer_connection.lock().unwrap().is_none());
-        assert!(participant.published_tracks.is_empty());
+        assert!(participant.published_tracks.read().await.is_empty());
     }
 
     #[tokio::test]

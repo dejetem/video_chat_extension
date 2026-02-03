@@ -47,10 +47,26 @@ pub enum MessageType {
         participant_id: String,
     },
 
+    /// Room joined successfully (Server -> Client)
+    RoomJoined {
+        /// Room ID
+        room_id: String,
+        /// Participant ID
+        participant_id: String,
+        /// ICE servers for the client to use
+        ice_servers: crate::stun_config::StunConfig,
+    },
+
     /// Leave a room
     Leave {
         /// Room ID
         room_id: String,
+        /// Participant ID
+        participant_id: String,
+    },
+
+    /// Participant has left the room (Server -> Client)
+    ParticipantLeft {
         /// Participant ID
         participant_id: String,
     },

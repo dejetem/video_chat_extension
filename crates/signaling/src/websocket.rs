@@ -2,31 +2,42 @@
 
 use crate::error::Result;
 use crate::messages::Message;
+#[cfg(target_arch = "wasm32")]
 use crate::protocol::Protocol;
+#[cfg(target_arch = "wasm32")]
 use std::cell::RefCell;
+#[cfg(target_arch = "wasm32")]
 use std::rc::Rc;
+#[cfg(target_arch = "wasm32")]
 use std::sync::Arc;
-
+#[cfg(target_arch = "wasm32")]
 use wasm_bindgen::prelude::*;
+#[cfg(target_arch = "wasm32")]
 use web_sys::{ErrorEvent, MessageEvent, WebSocket};
 
 /// WebSocket signaling client using web-sys (browser API).
+/// This struct behaves differently depending on target architecture.
 #[derive(Debug)]
 pub struct WebSocketSignaling {
     /// Signaling URL
     url: String,
+
+    #[cfg(target_arch = "wasm32")]
     /// Protocol handler
     protocol: Protocol,
+
+    #[cfg(target_arch = "wasm32")]
     /// The actual WebSocket
     ws: Option<WebSocket>,
-    /// Keepalive interval handle (for cleanup)
-    #[allow(dead_code)]
+
+    #[cfg(target_arch = "wasm32")]
     keepalive_interval: Rc<RefCell<Option<i32>>>,
-    /// Last pong received timestamp
-    #[allow(dead_code)]
+
+    #[cfg(target_arch = "wasm32")]
     last_pong: Rc<RefCell<f64>>,
 }
 
+#[cfg(target_arch = "wasm32")]
 impl WebSocketSignaling {
     /// Create a new WebSocket signaling client.
     pub fn new(url: &str) -> Self {
@@ -35,21 +46,15 @@ impl WebSocketSignaling {
             protocol: Protocol::new(),
             ws: None,
             keepalive_interval: Rc::new(RefCell::new(None)),
-            last_pong: Rc::new(RefCell::new(js_sys::Date::now())),
+            last_pong: Rc::new(RefCell::new(0.0)),
         }
     }
 
-    /// Get the signaling URL.
     pub fn url(&self) -> &str {
         &self.url
     }
 
-    /// Connect to the signaling server using the browser WebSocket API.
-    pub fn connect(&mut self) -> Result<()> {
-        self.connect_with_callback(None)
-    }
-
-    /// Connect to the signaling server with message and open callbacks.
+    /// Connect to the signaling server with custom callbacks.
     pub fn connect_with_callbacks(
         &mut self,
         on_message: Option<Box<dyn Fn(Message) + 'static>>,
@@ -59,27 +64,20 @@ impl WebSocketSignaling {
             crate::error::Error::Network(format!("Failed to create WebSocket: {:?}", e))
         })?;
 
-        // Set up event handlers
+        ws.set_binary_type(web_sys::BinaryType::Arraybuffer);
+
         let on_message_arc = on_message.map(Arc::new);
-        let last_pong_update = self.last_pong.clone();
+
+        // Clone for closure
+        let on_message_clone = on_message_arc.clone();
 
         let onmessage_callback = Closure::wrap(Box::new(move |e: MessageEvent| {
             if let Ok(txt) = e.data().dyn_into::<js_sys::JsString>() {
                 let text: String = txt.into();
-                log::debug!("message event, received string: {}", text);
-
-                // Check if this is a pong response
-                if let Ok(value) = serde_json::from_str::<serde_json::Value>(&text) {
-                    if value.get("type").and_then(|t| t.as_str()) == Some("pong") {
-                        *last_pong_update.borrow_mut() = js_sys::Date::now();
-                        log::debug!("Received WebSocket pong");
-                        return;
-                    }
-                }
 
                 // Try to parse as a signaling message
                 if let Ok(msg) = serde_json::from_str::<Message>(&text) {
-                    if let Some(ref cb) = on_message_arc {
+                    if let Some(ref cb) = on_message_clone {
                         cb(msg);
                     }
                 }
@@ -140,18 +138,16 @@ impl WebSocketSignaling {
                 }
             }) as Box<dyn FnMut()>);
 
-            // Set interval to 30 seconds (30000ms)
-            if let Some(window) = web_sys::window() {
-                if let Ok(interval_id) = window
-                    .set_interval_with_callback_and_timeout_and_arguments_0(
-                        ping_callback.as_ref().unchecked_ref(),
-                        30000,
-                    )
-                {
-                    *keepalive_interval.borrow_mut() = Some(interval_id);
-                    ping_callback.forget();
-                }
+            #[wasm_bindgen]
+            extern "C" {
+                #[wasm_bindgen(js_name = setInterval)]
+                fn set_interval(closure: &JsValue, timeout: i32) -> i32;
             }
+
+            // Set interval to 30 seconds (30000ms)
+            let interval_id = set_interval(ping_callback.as_ref().unchecked_ref(), 30000);
+            *keepalive_interval.borrow_mut() = Some(interval_id);
+            ping_callback.forget();
 
             if let Some(ref cb) = on_open {
                 cb();
@@ -170,6 +166,10 @@ impl WebSocketSignaling {
         on_message: Option<Box<dyn Fn(Message) + 'static>>,
     ) -> Result<()> {
         self.connect_with_callbacks(on_message, None)
+    }
+
+    pub fn connect(&mut self) -> Result<()> {
+        self.connect_with_callbacks(None, None)
     }
 
     /// Send a message via the WebSocket.
@@ -194,30 +194,60 @@ impl WebSocketSignaling {
     }
 }
 
+/// MOCK Implementation for non-wasm32 targets (Host/Tests)
+#[cfg(not(target_arch = "wasm32"))]
+impl WebSocketSignaling {
+    pub fn new(url: &str) -> Self {
+        Self {
+            url: url.to_string(),
+        }
+    }
+
+    pub fn url(&self) -> &str {
+        &self.url
+    }
+
+    pub fn connect_with_callback(
+        &mut self,
+        _on_message: Option<Box<dyn Fn(Message) + 'static>>,
+    ) -> Result<()> {
+        log::info!("MOCK WebSocket connected to {}", self.url);
+        Ok(())
+    }
+
+    pub fn connect(&mut self) -> Result<()> {
+        self.connect_with_callback(None)
+    }
+
+    pub async fn send(&self, message: Message) -> Result<()> {
+        log::info!("MOCK WebSocket sending: {:?}", message);
+        Ok(())
+    }
+}
+
 #[cfg(test)]
+#[cfg(target_arch = "wasm32")]
 mod tests {
     use super::*;
+    use crate::messages::MessageType;
+    use wasm_bindgen_test::*;
 
-    #[tokio::test]
-    async fn test_new_client() {
+    #[wasm_bindgen_test]
+    fn test_new_client() {
         let client = WebSocketSignaling::new("ws://localhost:8080");
         assert_eq!(client.url(), "ws://localhost:8080");
     }
 
-    #[tokio::test]
-    #[cfg(target_arch = "wasm32")]
+    #[wasm_bindgen_test]
     async fn test_connect() {
         let mut client = WebSocketSignaling::new("ws://localhost:8080");
         assert!(client.connect().is_ok());
     }
 
-    #[tokio::test]
-    #[cfg(target_arch = "wasm32")]
+    #[wasm_bindgen_test]
     async fn test_send_valid_message() {
         let mut client = WebSocketSignaling::new("ws://localhost:8080");
-        // We need to connect first to initialize the WebSocket
         let _ = client.connect();
-
         let msg = Message::new(
             "test-id",
             MessageType::Join {
@@ -225,8 +255,6 @@ mod tests {
                 participant_id: "user1".to_string(),
             },
         );
-        // Note: This will likely still fail in tests unless we mock the WebSocket opening
-        // but it prevents the "non-wasm target" panic.
         assert!(client.send(msg).await.is_ok());
     }
 }

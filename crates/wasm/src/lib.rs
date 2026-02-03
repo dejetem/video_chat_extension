@@ -14,7 +14,6 @@ pub mod sqlite;
 use crate::sqlite::Database;
 use std::cell::RefCell;
 use video_chat_sfu_client::SfuClient;
-use video_chat_signaling::stun_config::StunConfig;
 
 // Thread-local storage is safe for WASM (single-threaded) and allows !Send types like
 // RtcPeerConnection
@@ -80,14 +79,18 @@ pub fn leave_room() {
 }
 
 fn initialize_client(room_id: String, signaling_url: String) {
-    let stun_config = StunConfig {
-        urls: vec!["stun:stun.l.google.com:19302".into()],
-    };
+    let stun_config = video_chat_signaling::stun_config::default_stun_config();
 
     let room_id_clone = room_id.clone();
     // Create a callback for incoming messages
     let on_msg = Some(Box::new(move |message_data: String| {
         log::info!("Dispatching received message: {}", message_data);
+
+        // Check for special system messages from sfu-client (Participant Left)
+        if let Some(participant_id) = message_data.strip_prefix("participant_left:") {
+            js_interop::dispatch_event("participantLeft", &participant_id.to_string());
+            return;
+        }
 
         // Parse message format: "sender_id:text"
         let (sender_id, text) = if let Some(colon_pos) = message_data.find(':') {
@@ -161,11 +164,25 @@ fn initialize_client(room_id: String, signaling_url: String) {
                 );
 
                 let track_id = track.id();
+
+                // Extract Participant ID from Stream ID (format: "stream-{pid}")
+                let mut pid = "participant".to_string(); // Default fallback
+                if let Ok(stream_obj) = streams.get(0).dyn_into::<web_sys::MediaStream>() {
+                    let stream_id = stream_obj.id();
+                    if let Some(stripped) = stream_id.strip_prefix("stream-") {
+                        pid = stripped.to_string();
+                    }
+                }
+
+                // Format payload as "trackId|participantId|kind"
+                // This allows frontend to distinguish Audio (hidden) vs Video (visible)
+                let payload = format!("{}|{}|{}", track_id, pid, track.kind());
+
                 REMOTE_TRACKS.with(|t| {
                     t.borrow_mut().insert(track_id.clone(), track);
                 });
 
-                js_interop::dispatch_event("trackReceived", &track_id);
+                js_interop::dispatch_event("trackReceived", &payload);
             }) as Box<dyn FnMut(_)>);
             pc.set_ontrack(Some(on_track.as_ref().unchecked_ref()));
             on_track.forget();
@@ -198,8 +215,8 @@ pub fn attach_remote_track(video_id: String, track_id: String) {
     let video = document
         .get_element_by_id(&video_id)
         .expect("should have a video element")
-        .dyn_into::<web_sys::HtmlVideoElement>()
-        .expect("element is not a video element");
+        .dyn_into::<web_sys::HtmlMediaElement>()
+        .expect("element is not a media element (video or audio)");
 
     REMOTE_TRACKS.with(|t| {
         if let Some(track) = t.borrow().get(&track_id) {

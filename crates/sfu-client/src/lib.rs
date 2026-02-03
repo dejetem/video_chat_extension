@@ -105,6 +105,9 @@ impl SfuClient {
                 let signaling = signaling_clone.clone();
                 let _participant_id = participant_id_clone.clone();
 
+                // Log ALL received messages for debugging
+                log::info!("Received message type: {:?}", std::mem::discriminant(&msg.payload));
+
                 match msg.payload {
                      video_chat_signaling::MessageType::Chat { text, participant_id: sender_id, .. } => {
                          // Pass both sender ID and text to callback
@@ -167,6 +170,19 @@ impl SfuClient {
                              }
                          });
                      }
+                      video_chat_signaling::MessageType::RoomJoined { ice_servers, .. } => {
+                          log::info!("RoomJoined: Updating ICE servers with {} servers", ice_servers.ice_servers.len());
+                          let pc = pc.clone();
+                          wasm_bindgen_futures::spawn_local(async move {
+                              if let Err(e) = pc.update_ice_servers(&ice_servers) {
+                                  log::error!("Failed to update ICE servers: {}", e);
+                              }
+                          });
+                          cb("room_joined".to_string());
+                      }
+                      video_chat_signaling::MessageType::ParticipantLeft { participant_id } => {
+                         cb(format!("participant_left:{}", participant_id));
+                     }
                      _ => {}
                 }
             }) as Box<dyn Fn(video_chat_signaling::Message) + 'static>
@@ -200,13 +216,19 @@ impl SfuClient {
 
     /// Create and send specific Offer (renegotiation)
     pub fn create_offer(&self) -> Result<()> {
+        log::info!("OFFER CREATION STARTED - create_offer() called");
         let pc = self.peer_connection.clone();
         let signaling = self.signaling.clone();
         let participant_id = self.participant_id.clone();
 
         wasm_bindgen_futures::spawn_local(async move {
+            log::info!("Inside async task - calling pc.create_offer()");
             match pc.create_offer().await {
                 Ok(offer_sdp) => {
+                    log::info!(
+                        "Offer SDP created successfully, length: {}",
+                        offer_sdp.len()
+                    );
                     // Send Offer
                     let offer_msg = Message::new(
                         format!("offer-{}", js_sys::Date::now()),
@@ -218,12 +240,52 @@ impl SfuClient {
                             participant_id,
                         },
                     );
-                    let sig = signaling.lock().await;
-                    if let Err(e) = sig.send(offer_msg).await {
-                        log::error!("Failed to send Offer: {}", e);
+
+                    // Retry loop to handle WebSocket not being open yet
+                    let mut attempts = 0;
+                    let max_attempts = 20; // 10 seconds total
+
+                    loop {
+                        attempts += 1;
+                        let sig = signaling.lock().await;
+                        log::info!(
+                            "Attempting to send Offer to server (attempt {}/{})",
+                            attempts,
+                            max_attempts
+                        );
+
+                        match sig.send(offer_msg.clone()).await {
+                            Ok(_) => {
+                                log::info!("Offer sent successfully to server");
+                                break;
+                            }
+                            Err(e) => {
+                                log::warn!("Failed to send Offer: {}. Retrying in 500ms...", e);
+                                drop(sig); // Important: release lock before waiting!
+
+                                if attempts >= max_attempts {
+                                    log::error!(
+                                        "Failed to send Offer after {} attempts",
+                                        max_attempts
+                                    );
+                                    break;
+                                }
+
+                                // Wait 500ms
+                                let promise = js_sys::Promise::new(&mut |resolve, _| {
+                                    if let Some(window) = web_sys::window() {
+                                        let _ = window
+                                            .set_timeout_with_callback_and_timeout_and_arguments_0(
+                                                &resolve, 500,
+                                            );
+                                    }
+                                });
+                                let _ = wasm_bindgen_futures::JsFuture::from(promise).await;
+                            }
+                        }
                     }
                 }
-                Err(e) => log::error!("Failed to create offer: {}", e),
+                Err(e) => log::error!("Failed to create offer SDP: {}", e),
             }
         });
         Ok(())
@@ -420,6 +482,7 @@ impl SfuClient {
 
     /// Explicitly trigger WebRTC negotiation (create offer and send to server)
     pub fn start_negotiation(&self) -> Result<()> {
+        log::info!("START_NEGOTIATION CALLED directly");
         self.create_offer()
     }
 
