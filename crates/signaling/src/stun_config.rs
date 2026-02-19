@@ -78,12 +78,17 @@ pub fn default_stun_config() -> StunConfig {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use std::sync::Mutex;
+
+    // Tests that mutate env vars must be serialized — Rust runs tests in parallel
+    // threads within the same process, so set_var/remove_var in one test races
+    // with another. This lock ensures only one env-mutating test runs at a time.
+    static ENV_LOCK: Mutex<()> = Mutex::new(());
 
     #[test]
     fn test_stun_config_fallback() {
-        // When no env vars are set the config must contain exactly 1 server
-        // (the fallback STUN) and no TURN entries.
-        // Use temp_env or simply unset the variables for this unit test.
+        let _guard = ENV_LOCK.lock().unwrap();
+
         std::env::remove_var("STUN_URL");
         std::env::remove_var("TURN_USERNAME");
         std::env::remove_var("TURN_CREDENTIAL");
@@ -102,6 +107,8 @@ mod tests {
 
     #[test]
     fn test_stun_config_from_env() {
+        let _guard = ENV_LOCK.lock().unwrap();
+
         std::env::set_var("STUN_URL", "stun:stun.example.com:3478");
         std::env::set_var("TURN_URL_1", "turn:turn.example.com:3478");
         std::env::set_var("TURN_USERNAME", "testuser");
@@ -117,7 +124,7 @@ mod tests {
             Some("testpass")
         );
 
-        // Cleanup
+        // Cleanup so the next test that runs sees a clean slate
         std::env::remove_var("STUN_URL");
         std::env::remove_var("TURN_URL_1");
         std::env::remove_var("TURN_USERNAME");
@@ -127,7 +134,6 @@ mod tests {
     #[test]
     fn test_default_stun_config_struct() {
         let default_config = StunConfig::default();
-        // Derived Default produces an empty vector
         assert_eq!(default_config.ice_servers.len(), 0);
     }
 }
