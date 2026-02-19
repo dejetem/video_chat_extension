@@ -46,9 +46,12 @@ document.addEventListener('DOMContentLoaded', async () => {
 
         loadingStatus.textContent = `Joining Room: ${roomId}...`;
 
+        // TEMPORARY: Force localhost for testing (bypass Cloudflare tunnel)
+        // const signalingUrl = 'ws://localhost:8080/ws';
         // Use the Cloudflare tunnel URL for signaling
         const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
         const signalingUrl = `${protocol}//${window.location.host}/ws`;
+
 
         // Join the room
         join_room(roomId, signalingUrl);
@@ -387,31 +390,53 @@ document.addEventListener('DOMContentLoaded', async () => {
             console.log("Participant Card already exists for:", participantId);
         }
 
-        // If Video: Upgrade Card
         if (kind === 'video') {
             const videoId = `remote-video-${trackId}`;
             console.log("Processing VIDEO track:", trackId, "for participant:", participantId);
 
-            // Check if THIS specific video track is already attached
-            if (document.getElementById(videoId)) {
-                console.log("Video element already exists for this track:", videoId);
+            // QUANTUM FIX 2.0: Synchronous Memory-Based Deduplication
+            // Prevents async race conditions where strict DOM check fails
+            if (!window.activeVideoTracks) {
+                window.activeVideoTracks = new Set();
+            }
+
+            if (window.activeVideoTracks.has(trackId)) {
+                console.log("DEDUPE: Track already active in memory:", trackId);
                 return;
             }
 
+            // Check if THIS specific video track is already attached in DOM (fallback)
+            if (document.getElementById(videoId)) {
+                console.log("DEDUPE: Video element already exists for this track:", videoId);
+                return;
+            }
+
+            // Mark as active IMMEDIATELY before awaits or DOM ops
+            window.activeVideoTracks.add(trackId);
+
+            // cleanup helper
+            const cleanup = () => window.activeVideoTracks.delete(trackId);
+
             // Check if Card already has ANY video (avoid duplicate videos in one card)
-            // QUANTUM FIX: Strict duplicate check
             // If the card already has a video element, we should be very careful.
             // If the EXISTING video has the SAME track ID, do nothing.
             // If the EXISTING video has a DIFFERENT track ID, replace it.
             const existingVideo = participantCard.querySelector('video');
             if (existingVideo) {
                 // Check if it's the same track ID attached
-                // We stored it in data attribute I presume? Or we check ID.
                 if (existingVideo.id === videoId) {
                     console.log("Video element ALREADY exists and matches ID. Skipping duplicate creation.");
+                    cleanup(); // It's already there, so we technically didn't add a NEW one, but let's keep set consistent? 
+                    // Actually if it's already there, we should keep it in Set.
+                    // But we are returning, so we didn't do anything.
                     return;
                 }
                 console.warn("Card has video, but ID mismatch. Replacing.", existingVideo.id, "with", videoId);
+                // Remove the old track from the Set if it exists
+                if (window.activeVideoTracks) {
+                    const oldTrackId = existingVideo.id.replace('remote-video-', '');
+                    window.activeVideoTracks.delete(oldTrackId);
+                }
                 existingVideo.remove();
             }
 

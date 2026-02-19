@@ -167,11 +167,46 @@ fn initialize_client(room_id: String, signaling_url: String) {
 
                 // Extract Participant ID from Stream ID (format: "stream-{pid}")
                 let mut pid = "participant".to_string(); // Default fallback
+
+                let stream_count = streams.length();
+                log::info!("Track {} has {} associated streams", track_id, stream_count);
+
                 if let Ok(stream_obj) = streams.get(0).dyn_into::<web_sys::MediaStream>() {
                     let stream_id = stream_obj.id();
+                    log::info!("Checking stream ID: {}", stream_id);
                     if let Some(stripped) = stream_id.strip_prefix("stream-") {
                         pid = stripped.to_string();
+                        log::info!("Extracted participant ID from stream: {}", pid);
+                    } else {
+                        log::warn!("Stream ID {} does not start with 'stream-'", stream_id);
                     }
+                } else {
+                    log::warn!("No MediaStream found for track {}", track_id);
+                }
+
+                // Fallback: If pid is still "participant" (default), try to extract from Track ID
+                // Server format: "{pid}_{original_track_id}"
+                if pid == "participant" {
+                    log::info!("Attempting fallback extraction from Track ID: {}", track_id);
+                    if let Some((extracted_pid, _)) = track_id.split_once('_') {
+                        if extracted_pid.starts_with("user-") {
+                            pid = extracted_pid.to_string();
+                            log::info!("Extracted participant ID from track ID: {}", pid);
+                        }
+                    }
+                }
+
+                // If we still couldn't identify the participant, this is a placeholder
+                // transceiver event from the server's initial Answer (a=sendrecv with a UUID
+                // stream ID). Real tracks always arrive via renegotiation with "stream-user-*"
+                // IDs. Drop this event to prevent creating a Ghost Card.
+                if pid == "participant" {
+                    log::warn!(
+                        "Dropping ontrack for {} — could not identify participant (placeholder \
+                         transceiver)",
+                        track_id
+                    );
+                    return;
                 }
 
                 // Format payload as "trackId|participantId|kind"
@@ -248,13 +283,37 @@ pub fn add_stream(stream: web_sys::MediaStream) {
     SFU_CLIENT.with(|c| {
         if let Some(client) = c.borrow().as_ref() {
             let tracks = stream.get_tracks();
+            log::info!("add_stream called with {} tracks", tracks.length());
+
             for i in 0..tracks.length() {
                 let track = tracks
                     .get(i)
                     .dyn_into::<web_sys::MediaStreamTrack>()
                     .unwrap();
+
+                let track_kind = track.kind();
+                let track_id = track.id();
+                log::info!(
+                    "Adding track {}/{}: kind={}, id={}",
+                    i + 1,
+                    tracks.length(),
+                    track_kind,
+                    track_id
+                );
+
                 if let Err(e) = client.add_track(&track, &stream) {
-                    log::error!("Failed to add track from stream: {}", e);
+                    log::error!(
+                        "Failed to add track (kind={}, id={}): {}",
+                        track_kind,
+                        track_id,
+                        e
+                    );
+                } else {
+                    log::info!(
+                        "Successfully added track (kind={}, id={})",
+                        track_kind,
+                        track_id
+                    );
                 }
             }
             if let Err(e) = client.start_negotiation() {

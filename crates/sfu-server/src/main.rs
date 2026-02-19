@@ -21,6 +21,8 @@ use axum::extract::State;
 use std::sync::Arc;
 use video_chat_signaling::{Message as SignalingMessage, MessageType};
 use webrtc::ice_transport::ice_candidate::RTCIceCandidateInit; // Import RTCIceCandidateInit
+use webrtc::peer_connection::sdp::sdp_type::RTCSdpType;
+use webrtc::peer_connection::sdp::session_description::RTCSessionDescription;
 
 // ... (AppState struct remains same)
 
@@ -225,40 +227,81 @@ async fn handle_socket(socket: WebSocket, state: AppState) {
                             // Future: Trigger MediaRouter subscription
                         }
                         MessageType::Offer {
+                            room_id,
                             sdp,
                             participant_id,
                         } => {
-                            info!("Received Offer from {}", participant_id);
-                            if let Some(room_id) = &current_room {
-                                match NegotiationManager::handle_offer(
-                                    state.room_manager.clone(),
-                                    state.media_router.clone(),
-                                    room_id.clone(),
-                                    participant_id.clone(),
-                                    sdp.sdp,
-                                )
-                                .await
-                                {
-                                    Ok(answer_sdp) => {
-                                        info!("Generated Answer for {}", participant_id);
-                                        let answer_msg = SignalingMessage::new(
-                                            format!("answer-{}", signaling_msg.id),
-                                            MessageType::Answer {
-                                                sdp: video_chat_signaling::messages::SessionDescription {
-                                                    sdp_type: video_chat_signaling::messages::SdpType::Answer,
-                                                    sdp: answer_sdp,
-                                                },
-                                                participant_id: "sfu".to_string(),
+                            info!(
+                                "Received Offer from {} for room {}",
+                                participant_id, room_id
+                            );
+
+                            // Use room_id from message instead of current_room to avoid race
+                            // condition
+                            match NegotiationManager::handle_offer(
+                                state.room_manager.clone(),
+                                state.media_router.clone(),
+                                room_id.clone(),
+                                participant_id.clone(),
+                                sdp.sdp,
+                            )
+                            .await
+                            {
+                                Ok(answer_sdp) => {
+                                    info!("Generated Answer for {}", participant_id);
+                                    let answer_msg = SignalingMessage::new(
+                                        format!("answer-{}", signaling_msg.id),
+                                        MessageType::Answer {
+                                            sdp: video_chat_signaling::messages::SessionDescription {
+                                                sdp_type: video_chat_signaling::messages::SdpType::Answer,
+                                                sdp: answer_sdp,
                                             },
+                                            participant_id: "sfu".to_string(),
+                                        },
+                                    );
+                                    let _ = tx.send(answer_msg);
+                                }
+                                Err(e) => {
+                                    warn!("Failed to handle offer from {}: {}", participant_id, e);
+                                }
+                            }
+                        }
+                        MessageType::Answer {
+                            sdp,
+                            participant_id: _, /* Ignore the participant_id from message (it's
+                                                * "sfu") */
+                        } => {
+                            // Handle Answer from client (renegotiation response)
+                            // Use current_participant from WebSocket context, not from message
+                            if let (Some(room_id), Some(participant_id)) =
+                                (&current_room, &current_participant)
+                            {
+                                info!("Received Answer from {} (renegotiation)", participant_id);
+                                if let Some(pc) = state
+                                    .room_manager
+                                    .get_peer_connection(room_id, participant_id)
+                                    .await
+                                {
+                                    // Set remote description to complete renegotiation
+                                    let mut desc = RTCSessionDescription::default();
+                                    desc.sdp = sdp.sdp;
+                                    desc.sdp_type = RTCSdpType::Answer;
+
+                                    if let Err(e) = pc.set_remote_description(desc).await {
+                                        warn!(
+                                            "Failed to set remote description (Answer) for {}: {}",
+                                            participant_id, e
                                         );
-                                        let _ = tx.send(answer_msg);
-                                    }
-                                    Err(e) => {
-                                        warn!("Failed to handle offer: {}", e);
+                                    } else {
+                                        info!(
+                                            "Successfully processed renegotiation Answer from {}",
+                                            participant_id
+                                        );
                                     }
                                 }
                             }
                         }
+
                         MessageType::IceCandidate {
                             candidate,
                             participant_id,

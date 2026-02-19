@@ -73,6 +73,8 @@ pub enum MessageType {
 
     /// Offer SDP to SFU
     Offer {
+        /// Room ID
+        room_id: String,
         /// Session description
         sdp: SessionDescription,
         /// Participant ID
@@ -259,6 +261,7 @@ mod tests {
         let msg = Message::new(
             "offer-1",
             MessageType::Offer {
+                room_id: "room1".to_string(),
                 sdp: sdp.clone(),
                 participant_id: "user1".to_string(),
             },
@@ -325,6 +328,7 @@ mod tests {
         let msg = Message::new(
             "offer-1",
             MessageType::Offer {
+                room_id: "room1".to_string(),
                 sdp,
                 participant_id: "user1".to_string(),
             },
