@@ -117,7 +117,7 @@ impl SfuClient {
                      video_chat_signaling::MessageType::Error { message, .. } => {
                          cb(message);
                      }
-                     video_chat_signaling::MessageType::Offer { sdp, participant_id } => {
+                     video_chat_signaling::MessageType::Offer { room_id: _, sdp, participant_id } => {
                          // Handle Offer -> Send Answer
                          wasm_bindgen_futures::spawn_local(async move {
                              log::info!("Received Offer from {}", participant_id);
@@ -152,6 +152,9 @@ impl SfuClient {
                          // Handle Answer
                          wasm_bindgen_futures::spawn_local(async move {
                              log::info!("Received Answer");
+                             log::info!("=== ANSWER SDP START ===");
+                             log::info!("{}", sdp.sdp);
+                             log::info!("=== ANSWER SDP END ===");
                              if let Err(e) = pc.set_remote_description(&sdp.sdp, web_sys::RtcSdpType::Answer).await {
                                  log::error!("Failed to set remote description (Answer): {}", e);
                              }
@@ -220,6 +223,7 @@ impl SfuClient {
         let pc = self.peer_connection.clone();
         let signaling = self.signaling.clone();
         let participant_id = self.participant_id.clone();
+        let room_id = self.room_id.clone();
 
         wasm_bindgen_futures::spawn_local(async move {
             log::info!("Inside async task - calling pc.create_offer()");
@@ -229,10 +233,14 @@ impl SfuClient {
                         "Offer SDP created successfully, length: {}",
                         offer_sdp.len()
                     );
+                    log::info!("=== OFFER SDP START ===");
+                    log::info!("{}", offer_sdp);
+                    log::info!("=== OFFER SDP END ===");
                     // Send Offer
                     let offer_msg = Message::new(
                         format!("offer-{}", js_sys::Date::now()),
                         MessageType::Offer {
+                            room_id: room_id.clone(),
                             sdp: video_chat_signaling::messages::SessionDescription {
                                 sdp_type: video_chat_signaling::messages::SdpType::Offer,
                                 sdp: offer_sdp,

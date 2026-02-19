@@ -76,18 +76,28 @@ jobs:
   coverage:
     name: Code Coverage
     runs-on: ubuntu-latest
+    continue-on-error: true  # tarpaulin can fail with webrtc-rs (ptrace incompatibility); tests are gated by the test job
     steps:
       - uses: actions/checkout@v4
-      
+
       - name: Install Rust
         uses: dtolnay/rust-toolchain@stable
-      
+
       - name: Install tarpaulin
         run: cargo install cargo-tarpaulin
-      
+
       - name: Generate coverage
-        run: cargo tarpaulin --out Xml --workspace
-      
+        # --skip-clean avoids a full rebuild; --timeout 120 prevents hangs on webrtc-rs threads;
+        # --exclude-files skips generated/pkg files; || true ensures a tarpaulin instrumentation
+        # error never fails CI (real test failures are caught by the test job above).
+        run: |
+          cargo tarpaulin \
+            --out Xml \
+            --workspace \
+            --skip-clean \
+            --timeout 120 \
+            --exclude-files 'web/pkg/*' 'target/*' || true
+
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v3
         with:

@@ -187,8 +187,17 @@ impl MediaRouter {
                     for (output_track, target_ssrc, target_pt) in output_tracks {
                         // Forward packet with rewritten SSRC and Payload Type
                         let mut packet_clone = packet.clone();
+                        let _old_ssrc = packet_clone.header.ssrc;
+                        let _old_pt = packet_clone.header.payload_type;
+
                         packet_clone.header.ssrc = *target_ssrc;
                         packet_clone.header.payload_type = *target_pt;
+
+                        // CRITICAL FIX: Strip header extensions (like MID/RID)
+                        // The publisher's extensions don't match the subscriber's SDP
+                        // This was causing "Failed to set remote description" errors
+                        packet_clone.header.extensions.clear();
+                        packet_clone.header.extension = false;
 
                         if let Err(e) = output_track.write_rtp(&packet_clone).await {
                             if !e.to_string().contains("closed") {

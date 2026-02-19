@@ -22,6 +22,7 @@ fn test_signaling_flow() {
     let offer_msg = Message::new(
         "offer-1",
         MessageType::Offer {
+            room_id: "room-123".to_string(),
             sdp: offer_sdp,
             participant_id: "user-abc".to_string(),
         },
@@ -55,6 +56,7 @@ fn test_invalid_flow() {
     let msg = Message::new(
         "invalid-1",
         MessageType::Offer {
+            room_id: "room-123".to_string(),
             sdp: invalid_sdp,
             participant_id: "user-abc".to_string(),
         },
