@@ -68,7 +68,7 @@ video-chat-extension/
    cargo test --workspace
    ```
 
-4. **Build WASM module** (after Stage 2)
+4. **Build WASM module**
    ```bash
    cd crates/wasm
    wasm-pack build --target web
@@ -127,6 +127,15 @@ cargo build --workspace --release
 
 # WASM build (for extension)
 wasm-pack build crates/wasm --target web --out-dir ../../extension/pkg
+
+# WASM build (for web)
+wasm-pack build crates/wasm --target web --out-dir ../../web/pkg
+
+# Server
+cargo build --bin video-chat-sfu-server --release
+
+# Run server
+cargo run --bin video-chat-sfu-server --release
 
 # Run benchmarks
 cargo bench
